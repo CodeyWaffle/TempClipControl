@@ -24,7 +24,10 @@ h1{font-size:21px;letter-spacing:.2px;margin:0}.sub{color:var(--muted);font-size
 .unit{font-size:24px;color:var(--muted);padding-bottom:8px}
 .level{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--mint);margin-top:10px}
 .dot{width:8px;height:8px;background:currentColor;border-radius:50%;box-shadow:0 0 12px currentColor}
-.meter{height:7px;border-radius:20px;background:#101a21;overflow:hidden;margin-top:18px}
+.metertrack{position:relative;margin-top:22px}
+.meter{height:7px;border-radius:20px;background:#101a21;overflow:hidden}
+#targetPin{position:absolute;left:0%;top:-7px;width:3px;height:21px;margin-left:-1.5px;border-radius:2px;background:var(--cyan);box-shadow:0 0 0 2px #101a21,0 0 10px #78dce899;transition:left .25s;pointer-events:none}
+#targetPin::before{content:"";position:absolute;left:50%;top:-2px;width:9px;height:9px;margin-left:-4.5px;background:var(--cyan);border-radius:50%;box-shadow:0 0 0 2px #101a21}
 #meterfill{height:100%;width:0%;background:linear-gradient(90deg,#8ddbbd,#f2cb79,#f18b80);border-radius:20px;transition:width .4s}
 .meta{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-top:8px}
 .sectiontitle{font-size:12px;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
@@ -52,8 +55,8 @@ button:active{transform:scale(.98)}button:disabled{opacity:.42;cursor:not-allowe
  <div class="tempwrap"><div id="temp">--.-</div><div class="unit" id="unitLabel">°C</div></div>
  <div class="level"><span class="dot"></span><span id="level">Awaiting sensor data</span></div>
   <div class="hint" id="target">Target: --°C · change below or with Button 3</div>
- <div class="meter"><div id="meterfill"></div></div>
- <div class="meta"><span data-c="20">20°C</span><span data-c="50">50°C</span><span data-c="60">60°C</span><span data-c="65">65°C</span><span data-c="80">80°C</span></div>
+ <div class="metertrack"><div class="meter"><div id="meterfill"></div></div><div id="targetPin" title="Target"></div></div>
+ <div class="meta"><span data-c="0">0°C</span><span data-c="50">50°C</span><span data-c="60">60°C</span><span data-c="65">65°C</span><span data-c="100">100°C</span></div>
 </section>
 
 <section class="card">
@@ -104,6 +107,8 @@ let unitF=false;
 const toUnit=c=>unitF?c*9/5+32:c;
 const unitText=()=>unitF?"°F":"°C";
 const fmtTarget=c=>Math.round(toUnit(c));
+// Target pointer on the meter (meter scale is 0-100 °C)
+function movePin(c){ $("targetPin").style.left=Math.max(0,Math.min(100,c))+"%"; }
 
 // While the user is changing a setting, the value they chose wins over
 // status packets from the device until the device confirms it
@@ -146,6 +151,7 @@ function render(s){
  if(Number.isFinite(s.target)) {
   $("target").textContent="Target: "+fmtTarget(s.target)+unitText()+" · change below or with Button 3";
   $("targetSlider").value=s.target;
+  movePin(s.target);
   $("targetValue").textContent=fmtTarget(s.target);
  }
  if(s.ready && s.sensorOk && Number.isFinite(s.temp)){
@@ -154,7 +160,7 @@ function render(s){
   $("level").textContent=s.level;
   const colors={COMFORT:"#9be3c3",WARM:"#f2cb79",HOT:"#f0a16e",DANGER:"#f18b80"};
   $("level").style.color=colors[s.level]||"var(--mint)";
-  $("meterfill").style.width=Math.max(0,Math.min(100,(s.temp-20)/60*100))+"%";
+  $("meterfill").style.width=Math.max(0,Math.min(100,s.temp))+"%";
  }else{
   $("temp").textContent=s.ready?"ERR":"--.-";
   $("sensor").textContent=s.ready?"SENSOR ERROR":"READING";
@@ -233,6 +239,7 @@ $("fBtn").addEventListener("click",()=>setting("unit","F","UNIT=F"));
 $("targetSlider").addEventListener("input",()=>{
  const v=Number($("targetSlider").value);
  lock("target",v);                // keep device packets from fighting the drag
+ movePin(v);
  $("targetValue").textContent=fmtTarget(v);
  $("target").textContent="Target: "+fmtTarget(v)+unitText()+" · change below or with Button 3";
 });
