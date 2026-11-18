@@ -1,0 +1,1455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101820">
+<meta name="apple-mobile-web-app-title" content="Smart Temperature Clip">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23101820'/%3E%3Ctext x='50%25' y='51%25' dominant-baseline='central' text-anchor='middle' font-size='45'%3E%F0%9F%8C%A1%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<title>🌡️ Smart Temperature Clip · Web Control</title>
+<style>
+:root{color-scheme:dark;--bg:#101820;--line:#344854;--text:#edf4f6;--muted:#9aadb7;--cyan:#78dce8;--mint:#9be3c3;--red:#f18b80}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% -20%,#294452 0%,var(--bg) 58%);color:var(--text);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+main{width:min(100% - 28px,560px);margin:0 auto;padding:28px 0 40px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:22px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}.mark{width:42px;height:42px;flex-shrink:0;border:1px solid #54707d;border-radius:13px;display:grid;place-items:center;font-size:25px;line-height:1}
+h1{font-size:19px;letter-spacing:.2px;margin:0;line-height:1.2}.sub{color:var(--muted);font-size:11px;margin-top:2px;letter-spacing:1.1px;text-transform:uppercase}
+.header-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-inline-start:auto}
+.pill{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:6px 10px;color:var(--muted);white-space:nowrap}
+.pill.online{color:var(--mint);border-color:#426c5d}
+.theme-toggle,.lang-select{min-height:34px;padding:6px 10px;border-radius:99px;font-size:12px;white-space:nowrap;background:#263b48;color:var(--text);border:1px solid var(--line);font-family:inherit;cursor:pointer}
+.lang-select{max-width:128px}
+.card{background:linear-gradient(145deg,rgba(34,51,63,.96),rgba(25,38,48,.96));border:1px solid var(--line);border-radius:20px;padding:19px;margin:13px 0;box-shadow:0 12px 34px #0002}
+.cardhead{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--muted);font-size:12px;letter-spacing:1.3px;text-transform:uppercase}
+.temprow{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:17px 0 8px}
+.tempwrap{display:flex;align-items:flex-end;gap:8px;direction:ltr}
+#temp{font-size:clamp(54px,15vw,86px);font-weight:300;letter-spacing:-4px;line-height:.95;font-variant-numeric:tabular-nums}
+.unit{font-size:23px;color:var(--muted);padding-bottom:7px}
+.targetbox{display:flex;flex-direction:column;align-items:flex-end;text-align:end;padding-bottom:4px;cursor:pointer}
+.targetbox-lbl{font-size:11px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.targetvalue{font-size:clamp(28px,7.5vw,38px);font-weight:500;line-height:1;font-variant-numeric:tabular-nums;color:var(--cyan);direction:ltr}
+.level{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--mint);margin-top:8px}
+.dot{width:8px;height:8px;background:currentColor;border-radius:50%;box-shadow:0 0 12px currentColor;flex-shrink:0}
+
+/* Smart draggable live meter track */
+.metertrack{position:relative;margin-top:10px;padding:12px 0;cursor:ew-resize;touch-action:none;user-select:none;outline:none;direction:ltr}
+.metertrack:focus-visible .meter{box-shadow:0 0 0 2px var(--cyan)}
+.meter{height:8px;border-radius:20px;background:#101a21;overflow:hidden;pointer-events:none}
+#targetPin{position:absolute;left:25%;top:3px;width:4px;height:26px;margin-left:-2px;border-radius:3px;background:var(--cyan);box-shadow:0 0 0 2px #101a21,0 0 10px #78dce899;transition:left .2s,transform .12s;pointer-events:none}
+#targetPin::before{content:"";position:absolute;left:50%;top:-3px;width:12px;height:12px;margin-left:-6px;background:var(--cyan);border-radius:50%;box-shadow:0 0 0 2px #101a21}
+#targetPin.dragging{transition:none;transform:scaleY(1.12);box-shadow:0 0 0 2px #101a21,0 0 14px var(--cyan)}
+#targetPin.dragging::before{transform:scale(1.15)}
+#meterfill{height:100%;width:0%;background:linear-gradient(90deg,#8ddbbd,#f2cb79,#f18b80);border-radius:20px;transition:width .4s}
+.meta{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-top:2px;font-variant-numeric:tabular-nums;direction:ltr}
+
+.sectiontitle{font-size:12px;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
+.controlrow{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.controlname{font-size:16px}.hint{font-size:12px;color:var(--muted);margin-top:3px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);color:var(--text);background:#263b48;border-radius:13px;padding:12px 16px;min-height:46px;transition:transform .12s,border-color .12s,background .15s}
+button:active{transform:scale(.98)}button:disabled{opacity:.42;cursor:not-allowed}
+.primary{background:var(--cyan);color:#10212a;border-color:var(--cyan);font-weight:650}
+.toggle{min-width:118px;font-weight:650}.toggle.on{color:var(--mint);border-color:#4d806d;background:#203d39}.toggle.off{color:#f3b2a9;border-color:#80574f;background:#402d2c}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.mode{padding:14px 8px}.mode.selected{border-color:var(--cyan);background:#24404a;box-shadow:inset 0 0 0 1px var(--cyan);color:var(--cyan)}
+.connect{width:100%;margin-top:13px}.foot{color:var(--muted);font-size:11px;text-align:center;margin-top:22px}
+#log{font-size:12px;color:var(--muted);min-height:18px;margin-top:10px;text-align:center}
+
+/* Collapsible Advanced Settings bar */
+.advanced-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;background:linear-gradient(145deg,rgba(34,51,63,.96),rgba(25,38,48,.96));border:1px solid var(--line);border-radius:18px;padding:15px 19px;margin:13px 0 0;color:var(--text);text-align:start;box-shadow:0 8px 24px #0002}
+.advanced-toggle:hover{border-color:var(--cyan)}
+.advanced-left{display:flex;align-items:center;gap:10px;min-width:0}
+.advanced-title{font-size:13px;font-weight:650;letter-spacing:1.1px;text-transform:uppercase;color:var(--text)}
+.advanced-badge{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.advanced-chevron{font-size:12px;color:var(--cyan);transition:transform .34s cubic-bezier(.22,1,.36,1);flex-shrink:0}
+.advanced-toggle[aria-expanded="true"] .advanced-chevron{transform:rotate(180deg)}
+.collapsible-wrap{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .36s cubic-bezier(.22,1,.36,1),opacity .26s ease}
+.collapsible-wrap.open{grid-template-rows:1fr;opacity:1}
+.collapsible-inner{overflow:hidden}
+.collapsible-inner > .card{margin-top:10px}
+
+/* Editable four-level temperature profile */
+.profilebar-wrap{margin:18px 0 12px;direction:ltr}
+.profileaxis{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-bottom:7px;font-variant-numeric:tabular-nums}
+.profilebar{height:58px;position:relative;display:flex;border-radius:13px;background:#101a21;border:1px solid var(--line);overflow:visible;cursor:crosshair;touch-action:none;user-select:none}
+.profile-segment{height:100%;display:flex;align-items:center;justify-content:center;min-width:0;overflow:hidden;padding:0 3px;transition:width .12s;pointer-events:none}
+.profile-segment:first-child{border-radius:12px 0 0 12px}
+.profile-segment:last-child{border-radius:0 12px 12px 0}
+.profile-segment:nth-child(1){background:#39765f}
+.profile-segment:nth-child(2){background:#92743c}
+.profile-segment:nth-child(3){background:#a95f3d}
+.profile-segment:nth-child(4){background:#984b50}
+.profile-segment span{font-size:11px;font-weight:750;letter-spacing:.15px;white-space:nowrap;overflow:hidden;text-overflow:clip;color:#fff;text-shadow:0 1px 2px #0008;pointer-events:none}
+.profile-handle{position:absolute;top:-9px;bottom:-9px;width:34px;margin-left:-17px;z-index:8;cursor:ew-resize;display:flex;justify-content:center;align-items:stretch;touch-action:none;outline:none;pointer-events:auto}
+.profile-handle::before{content:"";width:4px;border-radius:3px;background:#fff;box-shadow:0 0 0 2px #14212a,0 0 10px #78dce8aa}
+.profile-handle::after{content:"";position:absolute;top:-3px;width:13px;height:13px;border-radius:50%;background:var(--cyan);border:2px solid #14212a;box-shadow:0 0 0 1px var(--cyan)}
+.profile-handle:focus-visible{filter:drop-shadow(0 0 4px var(--cyan))}
+.profile-handle.dragging::before{background:var(--cyan);width:5px}
+.profile-ticks{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;margin-top:9px;font-variant-numeric:tabular-nums}
+.boundary-list{display:grid;gap:13px;margin-top:17px}
+.boundary-row{display:grid;grid-template-columns:minmax(0,1fr) 92px;align-items:center;gap:12px}
+.boundary-row label{font-size:13px;color:var(--muted);font-weight:500;display:block}
+.boundary-row input[type=range]{width:100%;accent-color:var(--cyan);margin-top:7px;direction:ltr}
+.boundary-value{width:92px;background:#101a21;border:1px solid var(--line);border-radius:10px;color:var(--cyan);font:600 16px inherit;padding:9px 7px;text-align:center;font-variant-numeric:tabular-nums;direction:ltr}
+.label-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px}
+.label-field label{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}
+.label-field input{width:100%;min-width:0;background:#101a21;border:1px solid var(--line);border-radius:10px;color:var(--text);font:inherit;padding:10px}
+.profile-actions{display:flex;gap:9px;margin-top:16px}
+.profile-actions button{flex:1}
+.profile-status{min-height:17px;color:var(--muted);font-size:11px;margin-top:9px}
+
+:root[data-theme="light"]{
+ color-scheme:light;
+ --bg:#f3f6f8;--line:#d5e0e6;
+ --text:#17252d;--muted:#60727d;--cyan:#087f99;--mint:#16835f;--red:#c34e45;
+}
+:root[data-theme="light"] body{background:radial-gradient(ellipse at 50% -20%,#dcecf1 0%,var(--bg) 60%)}
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .advanced-toggle{background:linear-gradient(145deg,#ffffff,#f8fbfc);box-shadow:0 10px 28px #243b4b12}
+:root[data-theme="light"] button,
+:root[data-theme="light"] .lang-select{background:#edf3f6;color:var(--text)}
+:root[data-theme="light"] .primary{background:var(--cyan);color:#fff;border-color:var(--cyan)}
+:root[data-theme="light"] .toggle.on{background:#e2f3ed;color:#146b50;border-color:#8fcbb5}
+:root[data-theme="light"] .toggle.off{background:#faecea;color:#a43e35;border-color:#e2b5af}
+:root[data-theme="light"] .mode.selected{background:#e1f1f4;color:#086d82}
+:root[data-theme="light"] .meter{background:#dce5e9}
+:root[data-theme="light"] #targetPin{box-shadow:0 0 0 2px #dce5e9,0 0 10px #087f9944}
+:root[data-theme="light"] #targetPin::before{box-shadow:0 0 0 2px #dce5e9}
+:root[data-theme="light"] .profilebar{background:#e6edf0}
+:root[data-theme="light"] .boundary-value,
+:root[data-theme="light"] .label-field input{background:#fff;color:var(--text);border-color:var(--line)}
+:root[data-theme="light"] .profile-handle::before{background:#fff;box-shadow:0 0 0 2px #24343c,0 0 8px #087f9944}
+:root[data-theme="light"] .profile-handle::after{border-color:#fff;box-shadow:0 0 0 1px var(--cyan)}
+
+@media(min-width:480px){main{padding-top:38px}.card{padding:22px}}
+@media(max-width:420px){
+ .header-actions{gap:5px}
+ .theme-toggle,.lang-select{padding:5px 8px;font-size:11px}
+ .profile-segment span{font-size:9px}.profilebar{height:52px}
+ .boundary-row{grid-template-columns:minmax(0,1fr) 78px}.boundary-value{width:78px}.label-grid{gap:8px}
+ .advanced-badge{display:none}
+}
+</style>
+</head>
+<body>
+<main>
+<header>
+ <div class="brand">
+  <div class="mark" role="img" aria-label="Thermometer">🌡️</div>
+  <div>
+   <h1>Smart Temperature Clip</h1>
+   <div class="sub" id="subTitle">Bluetooth web control</div>
+  </div>
+ </div>
+ <div class="header-actions">
+  <select id="langSelect" class="lang-select" aria-label="Language" title="Language">
+   <option value="en">English</option>
+   <option value="zh-TW">繁體中文</option>
+   <option value="zh-CN">简体中文</option>
+   <option value="fr">Français</option>
+   <option value="ja">日本語</option>
+   <option value="ko">한국어</option>
+   <option value="es">Español</option>
+   <option value="de">Deutsch</option>
+   <option value="pt">Português</option>
+   <option value="it">Italiano</option>
+   <option value="ru">Русский</option>
+   <option value="ar">العربية</option>
+   <option value="vi">Tiếng Việt</option>
+   <option value="th">ไทย</option>
+  </select>
+  <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to light mode" title="Switch theme">☀️ Light</button>
+  <div id="connection" class="pill">● Disconnected</div>
+ </div>
+</header>
+
+<section class="card">
+ <div class="cardhead"><span id="liveTitle">Live temperature</span><span id="sensor">WAITING</span></div>
+ <div class="temprow">
+  <div class="tempwrap"><div id="temp">--.-</div><div class="unit" id="unitLabel">°C</div></div>
+  <div class="targetbox" id="targetBox" title="Drag the bar below to set target temperature">
+   <div class="targetbox-lbl" id="targetTitle">Target temperature</div>
+   <div class="targetvalue"><span id="targetValue">25</span><span id="targetUnit">°C</span></div>
+  </div>
+ </div>
+ <div class="level"><span class="dot"></span><span id="level">Awaiting sensor data</span></div>
+ <div class="hint" id="target">Drag the bar or use the rotary dial · 0–100°C, saved on device</div>
+ <div class="metertrack" id="meterTrack" role="slider" tabindex="0" aria-label="Target temperature on live bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="25">
+  <div class="meter"><div id="meterfill"></div></div>
+  <div id="targetPin" title="Target"></div>
+ </div>
+ <div class="meta">
+  <span id="metaTick0">0°C</span>
+  <span id="metaTick1">50°C</span>
+  <span id="metaTick2">60°C</span>
+  <span id="metaTick3">65°C</span>
+  <span id="metaTick4">100°C</span>
+ </div>
+</section>
+
+<section class="card">
+ <div class="sectiontitle" id="unitTitle">Temperature unit</div>
+ <div class="modes">
+  <button id="cBtn" class="mode" disabled>°C &nbsp; Celsius</button>
+  <button id="fBtn" class="mode" disabled>°F &nbsp; Fahrenheit</button>
+ </div>
+ <div class="hint" id="unitHint" style="margin-top:12px">Changes the display here and on the device. Saved on the device.</div>
+</section>
+
+<section class="card">
+ <div class="sectiontitle" id="audioTitle">Audio</div>
+ <div class="controlrow">
+  <div><div class="controlname" id="alertSoundName">Alert sound</div><div class="hint" id="mutehint">Connect to read status</div></div>
+  <button id="muteBtn" class="toggle" disabled>—</button>
+ </div>
+</section>
+
+<section class="card">
+ <div class="sectiontitle" id="displayTitle">Display mode</div>
+ <div class="modes">
+  <button id="alwaysBtn" class="mode" disabled>◉ &nbsp; Always on</button>
+  <button id="pressBtn" class="mode" disabled>◯ &nbsp; On press</button>
+ </div>
+ <div class="hint" id="displayHint" style="margin-top:12px">On press mode allows the device to enter standby after inactivity.</div>
+</section>
+
+<button id="advancedToggle" class="advanced-toggle" type="button" aria-expanded="false" aria-controls="advancedSection">
+ <span class="advanced-left">
+  <span class="advanced-title" id="advancedTitle">Advanced settings</span>
+  <span class="advanced-badge" id="advancedBadge">COMFORT · WARM · CAUTION · HOT</span>
+ </span>
+ <span class="advanced-chevron" aria-hidden="true">▼</span>
+</button>
+
+<div id="advancedSection" class="collapsible-wrap">
+ <div id="advancedInner" class="collapsible-inner" inert>
+  <section class="card" id="profileCard">
+   <div class="cardhead"><span id="levelsTitle">Temperature levels</span><span id="profileSync">WAITING FOR DEVICE</span></div>
+   <div class="hint" id="profileDesc" style="margin-top:7px">Drag the three vertical markers to set the boundaries (0–100°C).</div>
+   <div class="profilebar-wrap">
+    <div class="profileaxis"><span id="profileMin">0°C</span><span id="profileMax">100°C</span></div>
+    <div class="profilebar" id="profileBar" role="group" aria-label="Temperature level boundaries">
+     <div class="profile-segment" id="profileSeg0"><span id="profileSegLabel0">COMFORT</span></div>
+     <div class="profile-segment" id="profileSeg1"><span id="profileSegLabel1">WARM</span></div>
+     <div class="profile-segment" id="profileSeg2"><span id="profileSegLabel2">CAUTION</span></div>
+     <div class="profile-segment" id="profileSeg3"><span id="profileSegLabel3">HOT</span></div>
+     <div class="profile-handle" id="profileHandle0" role="slider" tabindex="0" aria-label="Boundary 1" aria-valuemin="1" aria-valuemax="98" aria-valuenow="50"></div>
+     <div class="profile-handle" id="profileHandle1" role="slider" tabindex="0" aria-label="Boundary 2" aria-valuemin="2" aria-valuemax="99" aria-valuenow="60"></div>
+     <div class="profile-handle" id="profileHandle2" role="slider" tabindex="0" aria-label="Boundary 3" aria-valuemin="3" aria-valuemax="99" aria-valuenow="65"></div>
+    </div>
+    <div class="profile-ticks"><span id="tick0">0°C</span><span id="tick1">25°C</span><span id="tick2">50°C</span><span id="tick3">75°C</span><span id="tick4">100°C</span></div>
+   </div>
+   <div class="boundary-list">
+    <div class="boundary-row">
+     <div><label id="boundaryLabel0" for="boundarySlider0">COMFORT → WARM</label><input id="boundarySlider0" type="range" min="1" max="98" value="50"></div>
+     <input class="boundary-value" id="boundaryValue0" type="text" inputmode="numeric" value="50°C" aria-label="Boundary 1 value">
+    </div>
+    <div class="boundary-row">
+     <div><label id="boundaryLabel1" for="boundarySlider1">WARM → CAUTION</label><input id="boundarySlider1" type="range" min="2" max="99" value="60"></div>
+     <input class="boundary-value" id="boundaryValue1" type="text" inputmode="numeric" value="60°C" aria-label="Boundary 2 value">
+    </div>
+    <div class="boundary-row">
+     <div><label id="boundaryLabel2" for="boundarySlider2">CAUTION → HOT</label><input id="boundarySlider2" type="range" min="3" max="99" value="65"></div>
+     <input class="boundary-value" id="boundaryValue2" type="text" inputmode="numeric" value="65°C" aria-label="Boundary 3 value">
+    </div>
+   </div>
+   <div class="sectiontitle" id="levelNamesTitle" style="margin-top:21px;margin-bottom:10px">Level names</div>
+   <div class="label-grid">
+    <div class="label-field"><label id="levelFieldLabel0" for="levelName0">Level 1 · Coolest</label><input id="levelName0" maxlength="11" value="COMFORT" autocomplete="off"></div>
+    <div class="label-field"><label id="levelFieldLabel1" for="levelName1">Level 2</label><input id="levelName1" maxlength="11" value="WARM" autocomplete="off"></div>
+    <div class="label-field"><label id="levelFieldLabel2" for="levelName2">Level 3</label><input id="levelName2" maxlength="11" value="CAUTION" autocomplete="off"></div>
+    <div class="label-field"><label id="levelFieldLabel3" for="levelName3">Level 4 · Hottest</label><input id="levelName3" maxlength="11" value="HOT" autocomplete="off"></div>
+   </div>
+   <div class="hint" id="levelNamesHint" style="margin-top:9px">Names support up to 11 English letters, numbers, spaces, hyphens or underscores (synced to device).</div>
+   <div class="profile-actions">
+    <button id="resetProfileBtn" disabled>↺ Reset defaults</button>
+    <button id="saveProfileBtn" class="primary" disabled>Save profile</button>
+   </div>
+   <div class="profile-status" id="profileStatus">Connect to Smart Temperature Clip to read and edit its saved profile.</div>
+  </section>
+ </div>
+</div>
+
+<button id="connectBtn" class="primary connect">Connect to Smart Temperature Clip</button>
+<div id="log">Ready to connect.</div>
+<div class="foot" id="footText">Smart Temperature Clip · BLE connection · No Wi-Fi required</div>
+</main>
+<script>
+const SERVICE_UUID = "7b2e0001-7c3a-4d8b-9f2a-6c5d4e3f2100";
+const CHARACTERISTIC_UUID = "7b2e0002-7c3a-4d8b-9f2a-6c5d4e3f2100";
+const DEV_NAME = "SmartTemperatureClip";
+
+const I18N = {
+ en: {
+  sub: "Bluetooth web control",
+  light: "☀️ Light", dark: "🌙 Dark",
+  connected: "● Connected", disconnected: "● Disconnected",
+  liveTitle: "Live temperature",
+  sensorWaiting: "WAITING", sensorOk: "SENSOR OK", sensorErr: "SENSOR ERROR", sensorReading: "READING",
+  awaitingData: "Awaiting sensor data", waitingFirst: "Waiting for first reading", checkSensor: "Check DS18B20 connection",
+  targetTitle: "Target temperature",
+  targetHint: "Drag the bar or use the rotary dial · {range}, saved on device",
+  unitTitle: "Temperature unit",
+  unitHint: "Changes the display here and on the device. Saved on the device.",
+  audioTitle: "Audio", alertSound: "Alert sound",
+  muteConnect: "Connect to read status", muteSilenced: "Alerts are silenced", muteEnabled: "Alert sounds are enabled",
+  mutedBtn: "MUTED", soundOnBtn: "SOUND ON",
+  displayTitle: "Display mode",
+  alwaysOnBtn: "◉   Always on", onPressBtn: "◯   On press",
+  displayHint: "On press mode allows the device to enter standby after inactivity.",
+  advancedTitle: "Advanced settings",
+  levelsTitle: "Temperature levels",
+  syncWaiting: "WAITING FOR DEVICE", syncSyncing: "SYNCING…", syncSavedDev: "SAVED ON DEVICE",
+  syncUnsaved: "UNSAVED CHANGES", syncSaved: "SAVED", syncReset: "RESET SENT",
+  profileDesc: "Drag the three vertical markers to set the boundaries ({range}).",
+  levelNamesTitle: "Level names",
+  lvl0: "Level 1 · Coolest", lvl1: "Level 2", lvl2: "Level 3", lvl3: "Level 4 · Hottest",
+  levelNamesHint: "Names support up to 11 English letters, numbers, spaces, hyphens or underscores (synced to device).",
+  resetBtn: "↺ Reset defaults", saveBtn: "Save profile",
+  statusConnect: "Connect to Smart Temperature Clip to read and edit its saved profile.",
+  statusLoaded: "Loaded the saved temperature profile from Smart Temperature Clip.",
+  statusDirty: "Adjust the profile, then select Save profile to send it to Smart Temperature Clip.",
+  statusInvalidChars: "Use 1–11 English letters, numbers, spaces, hyphens or underscores.",
+  statusCheckBeforeSave: "Check the boundaries and all four names before saving.",
+  statusSent: "Profile sent to Smart Temperature Clip. Waiting for device confirmation…",
+  statusRestoring: "Restoring default profile…",
+  confirmReset: "Restore COMFORT / WARM / CAUTION / HOT and the 50 / 60 / 65°C boundaries?",
+  connectBtn: "Connect to Smart Temperature Clip", disconnectBtn: "Disconnect",
+  logReady: "Ready to connect.", logDisconnected: "Disconnected.",
+  logNoBle: "Web Bluetooth is not available in this browser.",
+  logPicker: "Choose Smart Temperature Clip in the Bluetooth picker…",
+  logLost: "Connection lost. Tap Connect to reconnect.",
+  logNoSelect: "No device selected.", logConnected: "Connected to {name}.",
+  logConnectFirst: "Connect to Smart Temperature Clip first.",
+  logCmdSent: "Command sent: {cmd}", logCmdFail: "Command failed: {err}",
+  foot: "Smart Temperature Clip · BLE connection · No Wi-Fi required"
+ },
+ "zh-TW": {
+  sub: "藍牙網頁控制台",
+  light: "☀️ 淺色", dark: "🌙 深色",
+  connected: "● 已連線", disconnected: "● 未連線",
+  liveTitle: "即時溫度",
+  sensorWaiting: "等待中", sensorOk: "感測器正常", sensorErr: "感測器異常", sensorReading: "讀取中",
+  awaitingData: "等待感測器資料", waitingFirst: "等待首次讀數", checkSensor: "請檢查 DS18B20 連線",
+  targetTitle: "目標溫度",
+  targetHint: "直接拖曳色條或使用旋轉鈕調整 · {range}，變更將自動儲存至裝置",
+  unitTitle: "溫度單位",
+  unitHint: "同步切換網頁與裝置顯示單位，並儲存於裝置中。",
+  audioTitle: "音效設定", alertSound: "警示音",
+  muteConnect: "連線後讀取狀態", muteSilenced: "警示音已靜音", muteEnabled: "警示音已開啟",
+  mutedBtn: "已靜音", soundOnBtn: "音效開啟",
+  displayTitle: "顯示模式",
+  alwaysOnBtn: "◉   恆亮模式", onPressBtn: "◯   按壓顯示",
+  displayHint: "按壓顯示模式在閒置一段時間後會自動進入待機。",
+  advancedTitle: "進階設定",
+  levelsTitle: "溫度區間分級",
+  syncWaiting: "等待裝置連線", syncSyncing: "同步中…", syncSavedDev: "已儲存於裝置",
+  syncUnsaved: "未儲存的變更", syncSaved: "已儲存", syncReset: "已傳送重設",
+  profileDesc: "拖曳三個垂直標記以設定溫度邊界（{range}）。",
+  levelNamesTitle: "區間名稱",
+  lvl0: "第 1 級 · 最低溫", lvl1: "第 2 級", lvl2: "第 3 級", lvl3: "第 4 級 · 最高溫",
+  levelNamesHint: "名稱最多支援 11 個英數字、空格、連字號或底線（將同步顯示於裝置螢幕）。",
+  resetBtn: "↺ 恢復預設值", saveBtn: "儲存設定檔",
+  statusConnect: "連線至 Smart Temperature Clip 以讀取並編輯已儲存的溫度設定檔。",
+  statusLoaded: "已從 Smart Temperature Clip 載入儲存的溫度設定檔。",
+  statusDirty: "調整完成後，請點選「儲存設定檔」傳送至 Smart Temperature Clip。",
+  statusInvalidChars: "請使用 1–11 個英文字母、數字、空格、連字號或底線。",
+  statusCheckBeforeSave: "儲存前請確認邊界數值與四個名稱皆正確。",
+  statusSent: "設定檔已傳送至 Smart Temperature Clip，等待裝置確認…",
+  statusRestoring: "正在恢復預設設定檔…",
+  confirmReset: "確定要恢復 COMFORT / WARM / CAUTION / HOT 與 50 / 60 / 65°C 預設邊界嗎？",
+  connectBtn: "連線至 Smart Temperature Clip", disconnectBtn: "中斷連線",
+  logReady: "準備連線。", logDisconnected: "已中斷連線。",
+  logNoBle: "此瀏覽器不支援 Web Bluetooth。",
+  logPicker: "請在藍牙視窗中選擇 Smart Temperature Clip…",
+  logLost: "連線已中斷，請點擊連線以重新連接。",
+  logNoSelect: "未選擇裝置。", logConnected: "已連線至 {name}。",
+  logConnectFirst: "請先連線至 Smart Temperature Clip。",
+  logCmdSent: "已傳送指令：{cmd}", logCmdFail: "指令傳送失敗：{err}",
+  foot: "Smart Temperature Clip · BLE 藍牙連線 · 無需 Wi-Fi"
+ },
+ "zh-CN": {
+  sub: "蓝牙网页控制台",
+  light: "☀️ 浅色", dark: "🌙 深色",
+  connected: "● 已连接", disconnected: "● 未连接",
+  liveTitle: "实时温度",
+  sensorWaiting: "等待中", sensorOk: "传感器正常", sensorErr: "传感器错误", sensorReading: "读取中",
+  awaitingData: "等待传感器数据", waitingFirst: "等待首次读数", checkSensor: "请检查 DS18B20 连接",
+  targetTitle: "目标温度",
+  targetHint: "直接拖动进度条或使用旋钮调节 · {range}，更改将保存至设备",
+  unitTitle: "温度单位",
+  unitHint: "同步更改网页与设备上的显示单位，并保存在设备中。",
+  audioTitle: "音频设置", alertSound: "警报提示音",
+  muteConnect: "连接后读取状态", muteSilenced: "警报音已静音", muteEnabled: "警报音已开启",
+  mutedBtn: "已静音", soundOnBtn: "声音开启",
+  displayTitle: "显示模式",
+  alwaysOnBtn: "◉   常亮模式", onPressBtn: "◯   按键唤醒",
+  displayHint: "按键唤醒模式允许设备在无操作后进入待机状态。",
+  advancedTitle: "高级设置",
+  levelsTitle: "温度区间分级",
+  syncWaiting: "等待设备连接", syncSyncing: "同步中…", syncSavedDev: "已保存至设备",
+  syncUnsaved: "未保存的更改", syncSaved: "已保存", syncReset: "已发送重置",
+  profileDesc: "拖动三个垂直标记以设置温度边界（{range}）。",
+  levelNamesTitle: "区间名称",
+  lvl0: "第 1 级 · 最凉", lvl1: "第 2 级", lvl2: "第 3 级", lvl3: "第 4 级 · 最热",
+  levelNamesHint: "名称最多支持 11 个英文字母、数字、空格、连字符或下划线（将同步至设备）。",
+  resetBtn: "↺ 恢复默认", saveBtn: "保存配置",
+  statusConnect: "连接至 Smart Temperature Clip 以读取并编辑已保存的温度配置。",
+  statusLoaded: "已从 Smart Temperature Clip 加载保存的温度配置。",
+  statusDirty: "调整完成后，点击“保存配置”将其发送至 Smart Temperature Clip。",
+  statusInvalidChars: "请使用 1–11 个英文字母、数字、空格、连字符或下划线。",
+  statusCheckBeforeSave: "保存前请检查边界值和四个名称。",
+  statusSent: "配置已发送至 Smart Temperature Clip，正在等待设备确认…",
+  statusRestoring: "正在恢复默认配置…",
+  confirmReset: "确定恢复 COMFORT / WARM / CAUTION / HOT 和 50 / 60 / 65°C 边界吗？",
+  connectBtn: "连接至 Smart Temperature Clip", disconnectBtn: "断开连接",
+  logReady: "准备就绪。", logDisconnected: "已断开连接。",
+  logNoBle: "当前浏览器不支持 Web Bluetooth。",
+  logPicker: "请在蓝牙列表中选择 Smart Temperature Clip…",
+  logLost: "连接已断开，点击连接以重新连接。",
+  logNoSelect: "未选择设备。", logConnected: "已连接至 {name}。",
+  logConnectFirst: "请先连接至 Smart Temperature Clip。",
+  logCmdSent: "已发送指令：{cmd}", logCmdFail: "指令失败：{err}",
+  foot: "Smart Temperature Clip · BLE 蓝牙连接 · 无需 Wi-Fi"
+ },
+ fr: {
+  sub: "Contrôle Web Bluetooth",
+  light: "☀️ Clair", dark: "🌙 Sombre",
+  connected: "● Connecté", disconnected: "● Déconnecté",
+  liveTitle: "Température en direct",
+  sensorWaiting: "EN ATTENTE", sensorOk: "CAPTEUR OK", sensorErr: "ERREUR CAPTEUR", sensorReading: "LECTURE",
+  awaitingData: "En attente des données", waitingFirst: "En attente de mesure", checkSensor: "Vérifiez le capteur DS18B20",
+  targetTitle: "Température cible",
+  targetHint: "Faites glisser la barre ou utilisez la molette · {range}, enregistré",
+  unitTitle: "Unité de température",
+  unitHint: "Modifie l’affichage ici et sur l’appareil. Enregistré sur l’appareil.",
+  audioTitle: "Audio", alertSound: "Son d’alerte",
+  muteConnect: "Connectez pour lire l’état", muteSilenced: "Alertes désactivées", muteEnabled: "Alertes sonores activées",
+  mutedBtn: "MUET", soundOnBtn: "SON ACTIVÉ",
+  displayTitle: "Mode d’affichage",
+  alwaysOnBtn: "◉   Toujours allumé", onPressBtn: "◯   Sur pression",
+  displayHint: "Le mode sur pression met l’appareil en veille après inactivité.",
+  advancedTitle: "Paramètres avancés",
+  levelsTitle: "Niveles de température",
+  syncWaiting: "EN ATTENTE D’APPAREIL", syncSyncing: "SYNCHRO…", syncSavedDev: "ENREGISTRÉ",
+  syncUnsaved: "NON ENREGISTRÉ", syncSaved: "ENREGISTRÉ", syncReset: "RÉINITIALISÉ",
+  profileDesc: "Faites glisser les trois repères verticaux ({range}).",
+  levelNamesTitle: "Noms des niveaux",
+  lvl0: "Niveau 1 · Frais", lvl1: "Niveau 2", lvl2: "Niveau 3", lvl3: "Niveau 4 · Chaud",
+  levelNamesHint: "Jusqu’à 11 lettres anglaises, chiffres, espaces, tirets ou underscores (synchronisé avec l’appareil).",
+  resetBtn: "↺ Réinitialiser", saveBtn: "Enregistrer",
+  statusConnect: "Connectez Smart Temperature Clip pour lire et modifier son profil.",
+  statusLoaded: "Profil de température chargé depuis Smart Temperature Clip.",
+  statusDirty: "Ajustez le profil puis cliquez sur Enregistrer.",
+  statusInvalidChars: "Utilisez 1 à 11 lettres anglaises, chiffres, espaces, tirets ou underscores.",
+  statusCheckBeforeSave: "Vérifiez les seuils et les quatre noms avant d’enregistrer.",
+  statusSent: "Profil envoyé à Smart Temperature Clip. Confirmation en cours…",
+  statusRestoring: "Restauration du profil par défaut…",
+  confirmReset: "Restaurer COMFORT / WARM / CAUTION / HOT et les seuils 50 / 60 / 65°C ?",
+  connectBtn: "Connecter à Smart Temperature Clip", disconnectBtn: "Déconnecter",
+  logReady: "Prêt à connecter.", logDisconnected: "Déconnecté.",
+  logNoBle: "Web Bluetooth n’est pas disponible sur ce navigateur.",
+  logPicker: "Choisissez Smart Temperature Clip dans la fenêtre Bluetooth…",
+  logLost: "Connexion perdue. Appuyez sur Connecter.",
+  logNoSelect: "Aucun appareil sélectionné.", logConnected: "Connecté à {name}.",
+  logConnectFirst: "Connectez d’abord Smart Temperature Clip.",
+  logCmdSent: "Commande envoyée : {cmd}", logCmdFail: "Échec : {err}",
+  foot: "Smart Temperature Clip · Connexion BLE · Sans Wi-Fi"
+ },
+ ja: {
+  sub: "Bluetooth Web コントロール",
+  light: "☀️ ライト", dark: "🌙 ダーク",
+  connected: "● 接続済み", disconnected: "● 未接続",
+  liveTitle: "現在の温度",
+  sensorWaiting: "待機中", sensorOk: "センサー正常", sensorErr: "センサー異常", sensorReading: "読み取り中",
+  awaitingData: "センサーデータを待機中", waitingFirst: "初回データを待機中", checkSensor: "DS18B20 の接続を確認してください",
+  targetTitle: "目標温度",
+  targetHint: "バーをドラッグまたはダイヤルで調整 · {range}、デバイスに保存",
+  unitTitle: "温度単位",
+  unitHint: "画面とデバイスの単位を切り替え、デバイスに保存します。",
+  audioTitle: "オーディオ", alertSound: "アラート音",
+  muteConnect: "接続して状態を取得", muteSilenced: "アラート音はミュート中", muteEnabled: "アラート音は有効です",
+  mutedBtn: "ミュート", soundOnBtn: "サウンドオン",
+  displayTitle: "表示モード",
+  alwaysOnBtn: "◉   常時点灯", onPressBtn: "◯   操作時点灯",
+  displayHint: "操作時点灯モードでは、一定時間操作がないとスタンバイになります。",
+  advancedTitle: "詳細設定",
+  levelsTitle: "温度レベル設定",
+  syncWaiting: "デバイス待機中", syncSyncing: "同期中…", syncSavedDev: "デバイスに保存済み",
+  syncUnsaved: "未保存の変更", syncSaved: "保存完了", syncReset: "リセット送信済み",
+  profileDesc: "3つの縦マーカーをドラッグして境界を設定します（{range}）。",
+  levelNamesTitle: "レベル名",
+  lvl0: "レベル 1 · 低温", lvl1: "レベル 2", lvl2: "レベル 3", lvl3: "レベル 4 · 高温",
+  levelNamesHint: "半角英数字・スペース・ハイフン・アンダースコアで最大11文字まで（デバイスと同期）。",
+  resetBtn: "↺ 初期値に戻す", saveBtn: "プロファイルを保存",
+  statusConnect: "Smart Temperature Clip に接続して保存済みプロファイルを編集します。",
+  statusLoaded: "Smart Temperature Clip から温度プロファイルを読み込みました。",
+  statusDirty: "調整後、「プロファイルを保存」を押して送信してください。",
+  statusInvalidChars: "1〜11文字の半角英数字・スペース・ハイフン・アンダースコアを使用してください。",
+  statusCheckBeforeSave: "保存前に境界値と4つの名前を確認してください。",
+  statusSent: "Smart Temperature Clip に送信しました。確認を待機中…",
+  statusRestoring: "デフォルトプロファイルを復元中…",
+  confirmReset: "COMFORT / WARM / CAUTION / HOT と 50 / 60 / 65°C の境界に戻しますか？",
+  connectBtn: "Smart Temperature Clip に接続", disconnectBtn: "切断",
+  logReady: "接続準備完了。", logDisconnected: "切断しました。",
+  logNoBle: "このブラウザは Web Bluetooth に対応していません。",
+  logPicker: "Bluetooth 一覧から Smart Temperature Clip を選択してください…",
+  logLost: "接続が切れました。再接続してください。",
+  logNoSelect: "デバイスが選択されませんでした。", logConnected: "{name} に接続しました。",
+  logConnectFirst: "先に Smart Temperature Clip に接続してください。",
+  logCmdSent: "コマンド送信: {cmd}", logCmdFail: "送信失敗: {err}",
+  foot: "Smart Temperature Clip · BLE 接続 · Wi-Fi 不要"
+ },
+ ko: {
+  sub: "블루투스 웹 제어",
+  light: "☀️ 라이트", dark: "🌙 다크",
+  connected: "● 연결됨", disconnected: "● 연결 안 됨",
+  liveTitle: "실시간 온도",
+  sensorWaiting: "대기 중", sensorOk: "센서 정상", sensorErr: "센서 오류", sensorReading: "읽는 중",
+  awaitingData: "센서 데이터 대기 중", waitingFirst: "첫 측정값 대기 중", checkSensor: "DS18B20 연결을 확인하세요",
+  targetTitle: "목표 온도",
+  targetHint: "바를 드래그하거나 다이얼로 조절 · {range}, 기기에 저장됨",
+  unitTitle: "온도 단위",
+  unitHint: "웹과 기기의 표시 단위를 변경하고 기기에 저장합니다.",
+  audioTitle: "오디오", alertSound: "알림음",
+  muteConnect: "연결하여 상태 확인", muteSilenced: "알림음이 음소거됨", muteEnabled: "알림음이 활성화됨",
+  mutedBtn: "음소거", soundOnBtn: "소리 켜짐",
+  displayTitle: "디스플레이 모드",
+  alwaysOnBtn: "◉   항상 켜기", onPressBtn: "◯   누를 때 켜기",
+  displayHint: "누를 때 켜기 모드에서는 일정 시간 후 대기 상태로 전환됩니다.",
+  advancedTitle: "고급 설정",
+  levelsTitle: "온도 구간 설정",
+  syncWaiting: "기기 대기 중", syncSyncing: "동기화 중…", syncSavedDev: "기기에 저장됨",
+  syncUnsaved: "저장되지 않은 변경", syncSaved: "저장됨", syncReset: "초기화 전송됨",
+  profileDesc: "세 개의 세로 마커를 드래그해 경계를 설정하세요 ({range}).",
+  levelNamesTitle: "구간 이름",
+  lvl0: "1단계 · 가장 낮음", lvl1: "2단계", lvl2: "3단계", lvl3: "4단계 · 가장 높음",
+  levelNamesHint: "영문, 숫자, 공백, 하이픈, 밑줄 최대 11자까지 지원하며 기기에 동기화됩니다.",
+  resetBtn: "↺ 기본값 복원", saveBtn: "프로필 저장",
+  statusConnect: "Smart Temperature Clip에 연결하여 저장된 프로필을 편집하세요.",
+  statusLoaded: "Smart Temperature Clip에서 온도 프로필을 불러왔습니다.",
+  statusDirty: "조정 후 프로필 저장을 눌러 기기로 전송하세요.",
+  statusInvalidChars: "1~11자의 영문, 숫자, 공백, 하이픈 또는 밑줄을 사용하세요.",
+  statusCheckBeforeSave: "저장하기 전에 경계값과 4개의 이름을 확인하세요.",
+  statusSent: "Smart Temperature Clip으로 전송되었습니다. 기기 확인 대기 중…",
+  statusRestoring: "기본 프로필 복원 중…",
+  confirmReset: "COMFORT / WARM / CAUTION / HOT 및 50 / 60 / 65°C 경계로 복원할까요?",
+  connectBtn: "Smart Temperature Clip 연결", disconnectBtn: "연결 해제",
+  logReady: "연결 준비 완료.", logDisconnected: "연결이 해제되었습니다.",
+  logNoBle: "이 브라우저에서는 Web Bluetooth를 사용할 수 없습니다.",
+  logPicker: "Bluetooth 목록에서 Smart Temperature Clip을 선택하세요…",
+  logLost: "연결이 끊어졌습니다. 다시 연결하세요.",
+  logNoSelect: "기기가 선택되지 않았습니다.", logConnected: "{name}에 연결되었습니다.",
+  logConnectFirst: "먼저 Smart Temperature Clip에 연결하세요.",
+  logCmdSent: "명령 전송됨: {cmd}", logCmdFail: "명령 실패: {err}",
+  foot: "Smart Temperature Clip · BLE 연결 · Wi-Fi 불필요"
+ },
+ es: {
+  sub: "Control web Bluetooth",
+  light: "☀️ Claro", dark: "🌙 Oscuro",
+  connected: "● Conectado", disconnected: "● Desconectado",
+  liveTitle: "Temperatura en vivo",
+  sensorWaiting: "ESPERANDO", sensorOk: "SENSOR OK", sensorErr: "ERROR SENSOR", sensorReading: "LEYENDO",
+  awaitingData: "Esperando datos del sensor", waitingFirst: "Esperando primera lectura", checkSensor: "Revisa la conexión DS18B20",
+  targetTitle: "Temperatura objetivo",
+  targetHint: "Arrastra la barra o usa el dial · {range}, guardado en el dispositivo",
+  unitTitle: "Unidad de temperatura",
+  unitHint: "Cambia la visualización aquí y en el dispositivo. Se guarda en el dispositivo.",
+  audioTitle: "Audio", alertSound: "Sonido de alerta",
+  muteConnect: "Conecta para leer el estado", muteSilenced: "Alertas silenciadas", muteEnabled: "Sonidos de alerta activados",
+  mutedBtn: "SILENCIADO", soundOnBtn: "SONIDO ON",
+  displayTitle: "Modo de pantalla",
+  alwaysOnBtn: "◉   Siempre encendida", onPressBtn: "◯   Al pulsar",
+  displayHint: "El modo al pulsar permite entrar en reposo tras inactividad.",
+  advancedTitle: "Ajustes avanzados",
+  levelsTitle: "Niveles de temperatura",
+  syncWaiting: "ESPERANDO DISPOSITIVO", syncSyncing: "SINCRONIZANDO…", syncSavedDev: "GUARDADO",
+  syncUnsaved: "CAMBIOS SIN GUARDAR", syncSaved: "GUARDADO", syncReset: "REINICIO ENVIADO",
+  profileDesc: "Arrastra los tres marcadores verticales ({range}).",
+  levelNamesTitle: "Nombres de nivel",
+  lvl0: "Nivel 1 · Más fresco", lvl1: "Nivel 2", lvl2: "Nivel 3", lvl3: "Nivel 4 · Más caliente",
+  levelNamesHint: "Hasta 11 letras inglesas, números, espacios o guiones (sincronizado con el dispositivo).",
+  resetBtn: "↺ Restablecer", saveBtn: "Guardar perfil",
+  statusConnect: "Conecta Smart Temperature Clip para leer y editar su perfil.",
+  statusLoaded: "Perfil cargado desde Smart Temperature Clip.",
+  statusDirty: "Ajusta el perfil y pulsa Guardar perfil.",
+  statusInvalidChars: "Usa de 1 a 11 letras inglesas, números, espacios o guiones.",
+  statusCheckBeforeSave: "Revisa los límites y los cuatro nombres antes de guardar.",
+  statusSent: "Perfil enviado a Smart Temperature Clip. Esperando confirmación…",
+  statusRestoring: "Restaurando perfil predeterminado…",
+  confirmReset: "¿Restaurar COMFORT / WARM / CAUTION / HOT y límites 50 / 60 / 65°C?",
+  connectBtn: "Conectar a Smart Temperature Clip", disconnectBtn: "Desconectar",
+  logReady: "Listo para conectar.", logDisconnected: "Desconectado.",
+  logNoBle: "Web Bluetooth no está disponible en este navegador.",
+  logPicker: "Elige Smart Temperature Clip en el selector Bluetooth…",
+  logLost: "Conexión perdida. Toca Conectar.",
+  logNoSelect: "Ningún dispositivo seleccionado.", logConnected: "Conectado a {name}.",
+  logConnectFirst: "Conecta primero Smart Temperature Clip.",
+  logCmdSent: "Comando enviado: {cmd}", logCmdFail: "Error: {err}",
+  foot: "Smart Temperature Clip · Conexión BLE · Sin Wi-Fi"
+ },
+ de: {
+  sub: "Bluetooth-Websteuerung",
+  light: "☀️ Hell", dark: "🌙 Dunkel",
+  connected: "● Verbunden", disconnected: "● Getrennt",
+  liveTitle: "Live-Temperatur",
+  sensorWaiting: "WARTET", sensorOk: "SENSOR OK", sensorErr: "SENSORFEHLER", sensorReading: "LIEST",
+  awaitingData: "Warte auf Sensordaten", waitingFirst: "Warte auf ersten Messwert", checkSensor: "DS18B20-Verbindung prüfen",
+  targetTitle: "Zieltemperatur",
+  targetHint: "Leiste ziehen oder Drehregler nutzen · {range}, auf Gerät gespeichert",
+  unitTitle: "Temperatureinheit",
+  unitHint: "Ändert die Anzeige hier und auf dem Gerät. Auf dem Gerät gespeichert.",
+  audioTitle: "Audio", alertSound: "Warnton",
+  muteConnect: "Verbinden zum Lesen", muteSilenced: "Warntöne stummgeschaltet", muteEnabled: "Warntöne aktiviert",
+  mutedBtn: "STUMM", soundOnBtn: "TON AN",
+  displayTitle: "Anzeigemodus",
+  alwaysOnBtn: "◉   Immer an", onPressBtn: "◯   Bei Tastendruck",
+  displayHint: "Bei Tastendruck wechselt das Gerät nach Inaktivität in den Standby.",
+  advancedTitle: "Erweiterte Einstellungen",
+  levelsTitle: "Temperaturstufen",
+  syncWaiting: "WARTE AUF GERÄT", syncSyncing: "SYNCHRONISIERE…", syncSavedDev: "GESPEICHERT",
+  syncUnsaved: "UNGESPEICHERT", syncSaved: "GESPEICHERT", syncReset: "ZURÜCKGESETZT",
+  profileDesc: "Ziehen Sie die drei Markierungen für die Grenzen ({range}).",
+  levelNamesTitle: "Stufennamen",
+  lvl0: "Stufe 1 · Kühl", lvl1: "Stufe 2", lvl2: "Stufe 3", lvl3: "Stufe 4 · Heiß",
+  levelNamesHint: "Bis zu 11 englische Buchstaben, Zahlen, Leerzeichen oder Bindestriche (auf Gerät synchronisiert).",
+  resetBtn: "↺ Standardwerte", saveBtn: "Profil speichern",
+  statusConnect: "Mit Smart Temperature Clip verbinden, um das Profil zu bearbeiten.",
+  statusLoaded: "Gespeichertes Temperaturprofil von Smart Temperature Clip geladen.",
+  statusDirty: "Profil anpassen und auf Profil speichern klicken.",
+  statusInvalidChars: "1–11 englische Buchstaben, Zahlen, Leerzeichen oder Bindestriche verwenden.",
+  statusCheckBeforeSave: "Grenzen und alle vier Namen vor dem Speichern prüfen.",
+  statusSent: "Profil gesendet. Warte auf Gerätebestätigung…",
+  statusRestoring: "Standardprofil wird wiederhergestellt…",
+  confirmReset: "COMFORT / WARM / CAUTION / HOT und 50 / 60 / 65°C wiederherstellen?",
+  connectBtn: "Mit Smart Temperature Clip verbinden", disconnectBtn: "Trennen",
+  logReady: "Bereit zum Verbinden.", logDisconnected: "Getrennt.",
+  logNoBle: "Web Bluetooth ist in diesem Browser nicht verfügbar.",
+  logPicker: "Smart Temperature Clip in der Bluetooth-Auswahl wählen…",
+  logLost: "Verbindung verloren. Zum erneuten Verbinden tippen.",
+  logNoSelect: "Kein Gerät ausgewählt.", logConnected: "Verbunden mit {name}.",
+  logConnectFirst: "Zuerst mit Smart Temperature Clip verbinden.",
+  logCmdSent: "Befehl gesendet: {cmd}", logCmdFail: "Befehl fehlgeschlagen: {err}",
+  foot: "Smart Temperature Clip · BLE-Verbindung · Kein WLAN erforderlich"
+ },
+ pt: {
+  sub: "Controle web Bluetooth",
+  light: "☀️ Claro", dark: "🌙 Escuro",
+  connected: "● Conectado", disconnected: "● Desconectado",
+  liveTitle: "Temperatura ao vivo",
+  sensorWaiting: "AGUARDANDO", sensorOk: "SENSOR OK", sensorErr: "ERRO SENSOR", sensorReading: "LENDO",
+  awaitingData: "Aguardando dados do sensor", waitingFirst: "Aguardando primeira leitura", checkSensor: "Verifique a conexão DS18B20",
+  targetTitle: "Temperatura alvo",
+  targetHint: "Arraste a barra ou use o botão giratório · {range}, salvo no dispositivo",
+  unitTitle: "Unidade de temperatura",
+  unitHint: "Altera a exibição aqui e no dispositivo. Salvo no dispositivo.",
+  audioTitle: "Áudio", alertSound: "Som de alerta",
+  muteConnect: "Conecte para ler o status", muteSilenced: "Alertas silenciados", muteEnabled: "Sons de alerta ativados",
+  mutedBtn: "MUDO", soundOnBtn: "SOM LIGADO",
+  displayTitle: "Modo de exibição",
+  alwaysOnBtn: "◉   Sempre ligado", onPressBtn: "◯   Ao pressionar",
+  displayHint: "O modo ao pressionar permite entrar em espera após inatividade.",
+  advancedTitle: "Configurações avançadas",
+  levelsTitle: "Níveis de temperatura",
+  syncWaiting: "AGUARDANDO DISPOSITIVO", syncSyncing: "SINCRONIZANDO…", syncSavedDev: "SALVO NO DISPOSITIVO",
+  syncUnsaved: "ALTERAÇÕES NÃO SALVAS", syncSaved: "SALVO", syncReset: "REDEFINIÇÃO ENVIADA",
+  profileDesc: "Arraste os três marcadores verticais ({range}).",
+  levelNamesTitle: "Nomes dos níveis",
+  lvl0: "Nível 1 · Mais frio", lvl1: "Nível 2", lvl2: "Nível 3", lvl3: "Nível 4 · Mais quente",
+  levelNamesHint: "Até 11 letras inglesas, números, espaços ou hífens (sincronizado com o dispositivo).",
+  resetBtn: "↺ Restaurar padrão", saveBtn: "Salvar perfil",
+  statusConnect: "Conecte ao Smart Temperature Clip para editar o perfil salvo.",
+  statusLoaded: "Perfil carregado de Smart Temperature Clip.",
+  statusDirty: "Ajuste o perfil e selecione Salvar perfil.",
+  statusInvalidChars: "Use de 1 a 11 letras inglesas, números, espaços ou hífens.",
+  statusCheckBeforeSave: "Verifique os limites e os quatro nomes antes de salvar.",
+  statusSent: "Perfil enviado para Smart Temperature Clip. Aguardando confirmação…",
+  statusRestoring: "Restaurando perfil padrão…",
+  confirmReset: "Restaurar COMFORT / WARM / CAUTION / HOT e limites 50 / 60 / 65°C?",
+  connectBtn: "Conectar ao Smart Temperature Clip", disconnectBtn: "Desconectar",
+  logReady: "Pronto para conectar.", logDisconnected: "Desconectado.",
+  logNoBle: "Web Bluetooth não está disponível neste navegador.",
+  logPicker: "Escolha Smart Temperature Clip no seletor Bluetooth…",
+  logLost: "Conexão perdida. Toque em Conectar.",
+  logNoSelect: "Nenhum dispositivo selecionado.", logConnected: "Conectado a {name}.",
+  logConnectFirst: "Conecte-se primeiro ao Smart Temperature Clip.",
+  logCmdSent: "Comando enviado: {cmd}", logCmdFail: "Falha: {err}",
+  foot: "Smart Temperature Clip · Conexão BLE · Sem Wi-Fi"
+ },
+ it: {
+  sub: "Controllo web Bluetooth",
+  light: "☀️ Chiaro", dark: "🌙 Scuro",
+  connected: "● Connesso", disconnected: "● Disconnesso",
+  liveTitle: "Temperatura in tempo reale",
+  sensorWaiting: "IN ATTESA", sensorOk: "SENSORE OK", sensorErr: "ERRORE SENSORE", sensorReading: "LETTURA",
+  awaitingData: "In attesa dei dati sensore", waitingFirst: "In attesa della prima lettura", checkSensor: "Controlla collegamento DS18B20",
+  targetTitle: "Temperatura target",
+  targetHint: "Trascina la barra o usa la manopola · {range}, salvato sul dispositivo",
+  unitTitle: "Unità di temperatura",
+  unitHint: "Cambia la visualizzazione qui e sul dispositivo. Salvata sul dispositivo.",
+  audioTitle: "Audio", alertSound: "Suono di avviso",
+  muteConnect: "Connetti per leggere lo stato", muteSilenced: "Avvisi silenziati", muteEnabled: "Avvisi sonori attivi",
+  mutedBtn: "MUTO", soundOnBtn: "AUDIO ON",
+  displayTitle: "Modalità schermo",
+  alwaysOnBtn: "◉   Sempre attivo", onPressBtn: "◯   Alla pressione",
+  displayHint: "La modalità alla pressione attiva lo standby dopo inattività.",
+  advancedTitle: "Impostazioni avanzate",
+  levelsTitle: "Livelli di temperatura",
+  syncWaiting: "IN ATTESA DISPOSITIVO", syncSyncing: "SINCRONIZZAZIONE…", syncSavedDev: "SALVATO",
+  syncUnsaved: "MODIFICHE NON SALVATE", syncSaved: "SALVATO", syncReset: "RESET INVIATO",
+  profileDesc: "Trascina i tre indicatori verticali ({range}).",
+  levelNamesTitle: "Nomi livelli",
+  lvl0: "Livello 1 · Più fresco", lvl1: "Livello 2", lvl2: "Livello 3", lvl3: "Livello 4 · Più caldo",
+  levelNamesHint: "Fino a 11 lettere inglesi, numeri, spazi o trattini (sincronizzati con il dispositivo).",
+  resetBtn: "↺ Ripristina", saveBtn: "Salva profilo",
+  statusConnect: "Connetti Smart Temperature Clip per modificare il profilo salvato.",
+  statusLoaded: "Profilo caricato da Smart Temperature Clip.",
+  statusDirty: "Modifica il profilo e premi Salva profilo.",
+  statusInvalidChars: "Usa 1–11 lettere inglesi, numeri, spazi o trattini.",
+  statusCheckBeforeSave: "Controlla le soglie e i quattro nomi prima di salvare.",
+  statusSent: "Profilo inviato a Smart Temperature Clip. Attesa conferma…",
+  statusRestoring: "Ripristino profilo predefinito…",
+  confirmReset: "Ripristinare COMFORT / WARM / CAUTION / HOT e soglie 50 / 60 / 65°C?",
+  connectBtn: "Connetti a Smart Temperature Clip", disconnectBtn: "Disconnetti",
+  logReady: "Pronto per la connessione.", logDisconnected: "Disconnesso.",
+  logNoBle: "Web Bluetooth non è disponibile in questo browser.",
+  logPicker: "Scegli Smart Temperature Clip nel selettore Bluetooth…",
+  logLost: "Connessione persa. Tocca Connetti.",
+  logNoSelect: "Nessun dispositivo selezionato.", logConnected: "Connesso a {name}.",
+  logConnectFirst: "Connetti prima Smart Temperature Clip.",
+  logCmdSent: "Comando inviato: {cmd}", logCmdFail: "Errore: {err}",
+  foot: "Smart Temperature Clip · Connessione BLE · Nessun Wi-Fi richiesto"
+ },
+ ru: {
+  sub: "Веб-управление по Bluetooth",
+  light: "☀️ Светлая", dark: "🌙 Тёмная",
+  connected: "● Подключено", disconnected: "● Отключено",
+  liveTitle: "Текущая температура",
+  sensorWaiting: "ОЖИДАНИЕ", sensorOk: "ДАТЧИК ОК", sensorErr: "ОШИБКА ДАТЧИКА", sensorReading: "ЧТЕНИЕ",
+  awaitingData: "Ожидание данных датчика", waitingFirst: "Ожидание первого замера", checkSensor: "Проверьте датчик DS18B20",
+  targetTitle: "Целевая температура",
+  targetHint: "Тяните шкалу или крутите диск · {range}, сохраняется на устройстве",
+  unitTitle: "Единица температуры",
+  unitHint: "Меняет отображение здесь и на устройстве. Сохраняется на устройстве.",
+  audioTitle: "Звук", alertSound: "Звуковой сигнал",
+  muteConnect: "Подключитесь для чтения", muteSilenced: "Сигналы отключены", muteEnabled: "Звуковые сигналы включены",
+  mutedBtn: "БЕЗ ЗВУКА", soundOnBtn: "ЗВУК ВКЛ",
+  displayTitle: "Режим экрана",
+  alwaysOnBtn: "◉   Всегда включён", onPressBtn: "◯   По нажатию",
+  displayHint: "Режим по нажатию переводит устройство в ожидание при бездействии.",
+  advancedTitle: "Расширенные настройки",
+  levelsTitle: "Уровни температуры",
+  syncWaiting: "ОЖИДАНИЕ УСТРОЙСТВА", syncSyncing: "СИНХРОНИЗАЦИЯ…", syncSavedDev: "СОХРАНЕНО",
+  syncUnsaved: "НЕ СОХРАНЕНО", syncSaved: "СОХРАНЕНО", syncReset: "СБРОС ОТПРАВЛЕН",
+  profileDesc: "Перетащите три маркера для настройки границ ({range}).",
+  levelNamesTitle: "Названия уровней",
+  lvl0: "Уровень 1 · Прохладно", lvl1: "Уровень 2", lvl2: "Уровень 3", lvl3: "Уровень 4 · Горячо",
+  levelNamesHint: "До 11 латинских букв, цифр, пробелов или дефисов (синхронизируется с устройством).",
+  resetBtn: "↺ Сбросить", saveBtn: "Сохранить профиль",
+  statusConnect: "Подключитесь к Smart Temperature Clip для редактирования профиля.",
+  statusLoaded: "Профиль загружен из Smart Temperature Clip.",
+  statusDirty: "Настройте профиль и нажмите «Сохранить профиль».",
+  statusInvalidChars: "Используйте 1–11 латинских букв, цифр, пробелов или дефисов.",
+  statusCheckBeforeSave: "Проверьте границы и все четыре названия перед сохранением.",
+  statusSent: "Профиль отправлен. Ожидание подтверждения…",
+  statusRestoring: "Восстановление профиля по умолчанию…",
+  confirmReset: "Восстановить COMFORT / WARM / CAUTION / HOT и границы 50 / 60 / 65°C?",
+  connectBtn: "Подключить Smart Temperature Clip", disconnectBtn: "Отключить",
+  logReady: "Готово к подключению.", logDisconnected: "Отключено.",
+  logNoBle: "Web Bluetooth не поддерживается в этом браузере.",
+  logPicker: "Выберите Smart Temperature Clip в окне Bluetooth…",
+  logLost: "Соединение потеряно. Нажмите Подключить.",
+  logNoSelect: "Устройство не выбрано.", logConnected: "Подключено к {name}.",
+  logConnectFirst: "Сначала подключите Smart Temperature Clip.",
+  logCmdSent: "Отправлено: {cmd}", logCmdFail: "Ошибка: {err}",
+  foot: "Smart Temperature Clip · BLE-подключение · Wi-Fi не требуется"
+ },
+ ar: {
+  sub: "التحكم عبر بلوتوث الويب",
+  light: "☀️ فاتح", dark: "🌙 داكن",
+  connected: "● متصل", disconnected: "● غير متصل",
+  liveTitle: "درجة الحرارة الحالية",
+  sensorWaiting: "في الانتظار", sensorOk: "المستشعر سليم", sensorErr: "خطأ في المستشعر", sensorReading: "جارٍ القراءة",
+  awaitingData: "بانتظار بيانات المستشعر", waitingFirst: "بانتظار القراءة الأولى", checkSensor: "تحقق من توصيل DS18B20",
+  targetTitle: "درجة الحرارة المستهدفة",
+  targetHint: "اسحب الشريط أو استخدم القرص الدوار · {range}، يُحفظ على الجهاز",
+  unitTitle: "وحدة الحرارة",
+  unitHint: "تغيير العرض هنا وعلى الجهاز. يتم الحفظ على الجهاز.",
+  audioTitle: "الصوت", alertSound: "صوت التنبيه",
+  muteConnect: "اتصل لقراءة الحالة", muteSilenced: "التنبيهات مكتومة", muteEnabled: "أصوات التنبيه مفعّلة",
+  mutedBtn: "مكتوم", soundOnBtn: "الصوت مفعّل",
+  displayTitle: "وضع الشاشة",
+  alwaysOnBtn: "◉   تشغيل دائم", onPressBtn: "◯   عند الضغط",
+  displayHint: "يسمح وضع عند الضغط بدخول الجهاز في وضع الاستعداد بعد الخمول.",
+  advancedTitle: "إعدادات متقدمة",
+  levelsTitle: "مستويات الحرارة",
+  syncWaiting: "بانتظار الجهاز", syncSyncing: "جارٍ المزامنة…", syncSavedDev: "محفوظ على الجهاز",
+  syncUnsaved: "تغييرات غير محفوظة", syncSaved: "تم الحفظ", syncReset: "تم إرسال الإعادة",
+  profileDesc: "اسحب العلامات الرأسية الثلاث لتحديد الحدود ({range}).",
+  levelNamesTitle: "أسماء المستويات",
+  lvl0: "المستوى 1 · الأبرد", lvl1: "المستوى 2", lvl2: "المستوى 3", lvl3: "المستوى 4 · الأسخن",
+  levelNamesHint: "يدعم حتى 11 حرفاً إنجليزياً أو رقماً أو مسافة (تُزامن مع الجهاز).",
+  resetBtn: "↺ استعادة الافتراضي", saveBtn: "حفظ الملف",
+  statusConnect: "اتصل بـ Smart Temperature Clip لقراءة وتعديل ملف الحرارة.",
+  statusLoaded: "تم تحميل ملف الحرارة المحفوظ من Smart Temperature Clip.",
+  statusDirty: "عدّل الملف ثم اختر حفظ الملف لإرساله إلى الجهاز.",
+  statusInvalidChars: "استخدم 1–11 حرفاً إنجليزياً أو رقماً أو مسافة أو شرطة.",
+  statusCheckBeforeSave: "تحقق من الحدود والأسماء الأربعة قبل الحفظ.",
+  statusSent: "تم إرسال الملف إلى Smart Temperature Clip. بانتظار التأكيد…",
+  statusRestoring: "جارٍ استعادة الملف الافتراضي…",
+  confirmReset: "هل تريد استعادة COMFORT / WARM / CAUTION / HOT وحدود 50 / 60 / 65°C؟",
+  connectBtn: "الاتصال بـ Smart Temperature Clip", disconnectBtn: "قطع الاتصال",
+  logReady: "جاهز للاتصال.", logDisconnected: "تم قطع الاتصال.",
+  logNoBle: "تقنية Web Bluetooth غير متوفرة في هذا المتصفح.",
+  logPicker: "اختر Smart Temperature Clip من قائمة البلوتوث…",
+  logLost: "فُقد الاتصال. اضغط اتصال لإعادة المحاولة.",
+  logNoSelect: "لم يتم اختيار جهاز.", logConnected: "تم الاتصال بـ {name}.",
+  logConnectFirst: "اتصل بـ Smart Temperature Clip أولاً.",
+  logCmdSent: "تم إرسال الأمر: {cmd}", logCmdFail: "فشل الأمر: {err}",
+  foot: "Smart Temperature Clip · اتصال BLE · لا يتطلب Wi-Fi"
+ },
+ vi: {
+  sub: "Điều khiển web qua Bluetooth",
+  light: "☀️ Sáng", dark: "🌙 Tối",
+  connected: "● Đã kết nối", disconnected: "● Chưa kết nối",
+  liveTitle: "Nhiệt độ trực tiếp",
+  sensorWaiting: "ĐANG CHỜ", sensorOk: "CẢM BIẾN TỐT", sensorErr: "LỖI CẢM BIẾN", sensorReading: "ĐANG ĐỌC",
+  awaitingData: "Đang chờ dữ liệu cảm biến", waitingFirst: "Đang chờ lần đọc đầu tiên", checkSensor: "Kiểm tra kết nối DS18B20",
+  targetTitle: "Nhiệt độ mục tiêu",
+  targetHint: "Kéo thanh màu hoặc dùng núm xoay · {range}, lưu trên thiết bị",
+  unitTitle: "Đơn vị nhiệt độ",
+  unitHint: "Thay đổi hiển thị tại đây và trên thiết bị. Đã lưu trên thiết bị.",
+  audioTitle: "Âm thanh", alertSound: "Âm báo",
+  muteConnect: "Kết nối để xem trạng thái", muteSilenced: "Đã tắt tiếng cảnh báo", muteEnabled: "Âm báo đang bật",
+  mutedBtn: "TẮT TIẾNG", soundOnBtn: "BẬT ÂM",
+  displayTitle: "Chế độ hiển thị",
+  alwaysOnBtn: "◉   Luôn bật", onPressBtn: "◯   Khi nhấn",
+  displayHint: "Chế độ khi nhấn cho phép thiết bị vào chế độ chờ khi không hoạt động.",
+  advancedTitle: "Cài đặt nâng cao",
+  levelsTitle: "Các mức nhiệt độ",
+  syncWaiting: "ĐANG CHỜ THIẾT BỊ", syncSyncing: "ĐANG ĐỒNG BỘ…", syncSavedDev: "ĐÃ LƯU TRÊN THIẾT BỊ",
+  syncUnsaved: "CHƯA LƯU THAY ĐỔI", syncSaved: "ĐÃ LƯU", syncReset: "ĐÃ GỬI ĐẶT LẠI",
+  profileDesc: "Kéo ba vạch dọc để đặt ranh giới ({range}).",
+  levelNamesTitle: "Tên các mức",
+  lvl0: "Mức 1 · Mát nhất", lvl1: "Mức 2", lvl2: "Mức 3", lvl3: "Mức 4 · Nóng nhất",
+  levelNamesHint: "Hỗ trợ tối đa 11 chữ cái tiếng Anh, số, khoảng trắng hoặc dấu gạch (đồng bộ với thiết bị).",
+  resetBtn: "↺ Mặc định", saveBtn: "Lưu cấu hình",
+  statusConnect: "Kết nối Smart Temperature Clip để đọc và chỉnh sửa cấu hình.",
+  statusLoaded: "Đã tải cấu hình nhiệt độ từ Smart Temperature Clip.",
+  statusDirty: "Điều chỉnh xong, chọn Lưu cấu hình để gửi tới thiết bị.",
+  statusInvalidChars: "Dùng 1–11 chữ cái tiếng Anh, số, khoảng trắng hoặc dấu gạch.",
+  statusCheckBeforeSave: "Kiểm tra lại ranh giới và cả 4 tên trước khi lưu.",
+  statusSent: "Đã gửi cấu hình tới Smart Temperature Clip. Đang chờ xác nhận…",
+  statusRestoring: "Đang khôi phục mặc định…",
+  confirmReset: "Khôi phục COMFORT / WARM / CAUTION / HOT và mốc 50 / 60 / 65°C?",
+  connectBtn: "Kết nối Smart Temperature Clip", disconnectBtn: "Ngắt kết nối",
+  logReady: "Sẵn sàng kết nối.", logDisconnected: "Đã ngắt kết nối.",
+  logNoBle: "Trình duyệt này không hỗ trợ Web Bluetooth.",
+  logPicker: "Chọn Smart Temperature Clip trong danh sách Bluetooth…",
+  logLost: "Mất kết nối. Nhấn Kết nối để thử lại.",
+  logNoSelect: "Chưa chọn thiết bị.", logConnected: "Đã kết nối với {name}.",
+  logConnectFirst: "Hãy kết nối Smart Temperature Clip trước.",
+  logCmdSent: "Đã gửi lệnh: {cmd}", logCmdFail: "Lỗi lệnh: {err}",
+  foot: "Smart Temperature Clip · Kết nối BLE · Không cần Wi-Fi"
+ },
+ th: {
+  sub: "ควบคุมผ่านเว็บ Bluetooth",
+  light: "☀️ สว่าง", dark: "🌙 มืด",
+  connected: "● เชื่อมต่อแล้ว", disconnected: "● ยังไม่เชื่อมต่อ",
+  liveTitle: "อุณหภูมิปัจจุบัน",
+  sensorWaiting: "กำลังรอ", sensorOk: "เซ็นเซอร์ปกติ", sensorErr: "เซ็นเซอร์ผิดพลาด", sensorReading: "กำลังอ่านค่า",
+  awaitingData: "กำลังรอข้อมูลจากเซ็นเซอร์", waitingFirst: "กำลังรอค่าแรก", checkSensor: "ตรวจสอบการเชื่อมต่อ DS18B20",
+  targetTitle: "อุณหภูมิเป้าหมาย",
+  targetHint: "ลากแถบสีหรือหมุนปุ่มปรับ · {range} บันทึกบนอุปกรณ์อัตโนมัติ",
+  unitTitle: "หน่วยอุณหภูมิ",
+  unitHint: "เปลี่ยนการแสดงผลที่นี่และบนอุปกรณ์ บันทึกลงในอุปกรณ์",
+  audioTitle: "เสียง", alertSound: "เสียงแจ้งเตือน",
+  muteConnect: "เชื่อมต่อเพื่อดูสถานะ", muteSilenced: "ปิดเสียงแจ้งเตือนแล้ว", muteEnabled: "เปิดเสียงแจ้งเตือนอยู่",
+  mutedBtn: "ปิดเสียง", soundOnBtn: "เปิดเสียง",
+  displayTitle: "โหมดหน้าจอ",
+  alwaysOnBtn: "◉   เปิดตลอด", onPressBtn: "◯   เมื่อกดปุ่ม",
+  displayHint: "โหมดเมื่อกดปุ่มจะพักหน้าจออัตโนมัติเมื่อไม่ได้ใช้งาน",
+  advancedTitle: "การตั้งค่าขั้นสูง",
+  levelsTitle: "ระดับช่วงอุณหภูมิ",
+  syncWaiting: "กำลังรออุปกรณ์", syncSyncing: "กำลังซิงค์…", syncSavedDev: "บันทึกบนอุปกรณ์แล้ว",
+  syncUnsaved: "มีการเปลี่ยนแปลงที่ยังไม่บันทึก", syncSaved: "บันทึกแล้ว", syncReset: "ส่งคำสั่งรีเซ็ตแล้ว",
+  profileDesc: "ลากเส้นแบ่งแนวตั้งทั้งสามเพื่อตั้งค่าขอบเขต ({range})",
+  levelNamesTitle: "ชื่อระดับอุณหภูมิ",
+  lvl0: "ระดับ 1 · เย็นสุด", lvl1: "ระดับ 2", lvl2: "ระดับ 3", lvl3: "ระดับ 4 · ร้อนสุด",
+  levelNamesHint: "รองรับตัวอักษรอังกฤษ ตัวเลข เว้นวรรค หรือขีดสูงสุด 11 ตัว (ซิงค์กับอุปกรณ์)",
+  resetBtn: "↺ คืนค่าเริ่มต้น", saveBtn: "บันทึกโปรไฟล์",
+  statusConnect: "เชื่อมต่อกับ Smart Temperature Clip เพื่ออ่านและแก้ไขโปรไฟล์ที่บันทึกไว้",
+  statusLoaded: "โหลดโปรไฟล์อุณหภูมิจาก Smart Temperature Clip แล้ว",
+  statusDirty: "ปรับแต่งโปรไฟล์แล้วกด บันทึกโปรไฟล์ เพื่อส่งไปยังอุปกรณ์",
+  statusInvalidChars: "ใช้ตัวอักษรอังกฤษ ตัวเลข เว้นวรรค หรือขีด 1–11 ตัว",
+  statusCheckBeforeSave: "ตรวจสอบค่าขอบเขตและชื่อทั้ง 4 ระดับก่อนบันทึก",
+  statusSent: "ส่งโปรไฟล์ไปยัง Smart Temperature Clip แล้ว กำลังรอยืนยัน…",
+  statusRestoring: "กำลังคืนค่าโปรไฟล์เริ่มต้น…",
+  confirmReset: "คืนค่า COMFORT / WARM / CAUTION / HOT และขอบเขต 50 / 60 / 65°C หรือไม่?",
+  connectBtn: "เชื่อมต่อ Smart Temperature Clip", disconnectBtn: "ตัดการเชื่อมต่อ",
+  logReady: "พร้อมเชื่อมต่อ", logDisconnected: "ตัดการเชื่อมต่อแล้ว",
+  logNoBle: "เบราว์เซอร์นี้ไม่รองรับ Web Bluetooth",
+  logPicker: "เลือก Smart Temperature Clip ในหน้าต่าง Bluetooth…",
+  logLost: "การเชื่อมต่อขาดหาย แตะเชื่อมต่ออีกครั้ง",
+  logNoSelect: "ไม่ได้เลือกอุปกรณ์", logConnected: "เชื่อมต่อกับ {name} แล้ว",
+  logConnectFirst: "โปรดเชื่อมต่อ Smart Temperature Clip ก่อน",
+  logCmdSent: "ส่งคำสั่งแล้ว: {cmd}", logCmdFail: "คำสั่งล้มเหลว: {err}",
+  foot: "Smart Temperature Clip · การเชื่อมต่อ BLE · ไม่ต้องใช้ Wi-Fi"
+ }
+};
+
+let currentLang = "en";
+try {
+ const savedLang = localStorage.getItem("smarttempclip-lang");
+ if (savedLang && I18N[savedLang]) currentLang = savedLang;
+} catch (e) {}
+
+function t(key, vars = {}) {
+ const dict = I18N[currentLang] || I18N.en;
+ let str = dict[key] !== undefined ? dict[key] : (I18N.en[key] || key);
+ for (const [k, v] of Object.entries(vars)) {
+  str = str.replaceAll("{" + k + "}", String(v));
+ }
+ return str;
+}
+
+const $ = id => document.getElementById(id);
+
+let device = null, characteristic = null, state = null;
+let profile = { b: [50, 60, 65], n: ["COMFORT", "WARM", "CAUTION", "HOT"] };
+let profileDragIndex = -1;
+let profileSyncState = "waiting", profileStatusKey = "statusConnect";
+let lastLogState = { key: "logReady", vars: {} };
+
+// The device always reports temp/target in Celsius; only the display is converted.
+let unitF = false;
+let previewTarget = 25;
+const toUnit = c => unitF ? c * 9 / 5 + 32 : c;
+const unitText = () => unitF ? "°F" : "°C";
+const rangeText = () => unitF ? "32–212°F" : "0–100°C";
+const fmtTarget = c => Math.round(toUnit(c));
+
+function movePin(c) {
+ const clamped = Math.max(0, Math.min(100, c));
+ $("targetPin").style.left = clamped + "%";
+ $("meterTrack").setAttribute("aria-valuenow", Math.round(clamped));
+}
+
+const LOCK_MS = 4000;
+const pending = {};
+function lock(key, value, ms = LOCK_MS) { pending[key] = { v: value, t: Date.now() + ms }; }
+function applyPending(s) {
+ const o = { ...s }, now = Date.now();
+ for (const k of Object.keys(pending)) {
+  const p = pending[k];
+  if (now > p.t) { delete pending[k]; continue; }
+  if (o[k] === p.v) delete pending[k];
+  else o[k] = p.v;
+ }
+ return o;
+}
+function refresh() { if (state) render(state); }
+
+function setLog(key, vars = {}) {
+ lastLogState = { key, vars };
+ $("log").textContent = t(key, vars);
+}
+
+function setConnected(yes) {
+ $("connection").textContent = yes ? t("connected") : t("disconnected");
+ $("connection").classList.toggle("online", yes);
+ $("connectBtn").textContent = yes ? t("disconnectBtn") : t("connectBtn");
+ ["muteBtn", "alwaysBtn", "pressBtn", "cBtn", "fBtn", "resetProfileBtn", "saveProfileBtn"]
+  .forEach(id => $(id).disabled = !yes);
+}
+
+function updateUnitTexts() {
+ $("unitLabel").textContent = unitText();
+ $("targetUnit").textContent = unitText();
+ $("targetValue").textContent = fmtTarget(previewTarget);
+ $("target").textContent = t("targetHint", { range: rangeText() });
+ $("profileDesc").textContent = t("profileDesc", { range: rangeText() });
+ $("cBtn").classList.toggle("selected", !unitF);
+ $("fBtn").classList.toggle("selected", unitF);
+
+ const ticksC = [0, profile.b[0], profile.b[1], profile.b[2], 100];
+ ticksC.forEach((cVal, i) => {
+  const el = $("metaTick" + i);
+  if (el) el.textContent = fmtTarget(cVal) + unitText();
+ });
+}
+
+function render(s) {
+ s = applyPending(s);
+ state = s;
+ unitF = (s.unit === "F");
+ if (Number.isFinite(s.target)) {
+  previewTarget = s.target;
+  movePin(s.target);
+ }
+ updateUnitTexts();
+ updateProfileDisplay();
+
+ if (s.ready && s.sensorOk && Number.isFinite(s.temp)) {
+  $("temp").textContent = toUnit(s.temp).toFixed(1);
+  $("sensor").textContent = t("sensorOk");
+  $("level").textContent = s.level;
+  const namedColors = { COMFORT: "#9be3c3", WARM: "#f2cb79", CAUTION: "#f0a16e", HOT: "#f18b80", DANGER: "#f18b80" };
+  const idxColors = ["#9be3c3", "#f2cb79", "#f0a16e", "#f18b80"];
+  const lvlUpper = String(s.level || "").trim().toUpperCase();
+  const idx = profile.n.findIndex(name => name.trim().toUpperCase() === lvlUpper);
+  $("level").style.color = (idx >= 0 ? idxColors[idx] : namedColors[lvlUpper]) || "var(--mint)";
+  $("meterfill").style.width = Math.max(0, Math.min(100, s.temp)) + "%";
+ } else {
+  $("temp").textContent = s.ready ? "ERR" : "--.-";
+  $("sensor").textContent = s.ready ? t("sensorErr") : t("sensorReading");
+  $("level").textContent = s.ready ? t("checkSensor") : t("waitingFirst");
+  $("level").style.color = s.ready ? "var(--red)" : "var(--mint)";
+  $("meterfill").style.width = "0%";
+ }
+
+ $("muteBtn").textContent = s.muted ? t("mutedBtn") : t("soundOnBtn");
+ $("muteBtn").className = "toggle " + (s.muted ? "off" : "on");
+ $("mutehint").textContent = s.muted ? t("muteSilenced") : t("muteEnabled");
+ $("alwaysBtn").classList.toggle("selected", !!s.alwaysOn);
+ $("pressBtn").classList.toggle("selected", !s.alwaysOn);
+}
+
+function parseStatus(value) {
+ try {
+  const text = new TextDecoder().decode(value);
+  const parsed = JSON.parse(text);
+  if (typeof parsed === "object" && parsed !== null) {
+   if (parsed.cfg === 1 && Array.isArray(parsed.b) && parsed.b.length === 3 && Array.isArray(parsed.n) && parsed.n.length === 4) {
+    const b = parsed.b.map(Number), n = parsed.n.map(String);
+    if (validBoundaries(b) && n.every(validLabel)) {
+     profile = { b, n };
+     loadProfileInputs();
+     updateProfileDisplay();
+     updateUnitTexts();
+     profileSyncState = "savedDev";
+     profileStatusKey = "statusLoaded";
+     syncProfileTexts();
+    }
+   } else if ("ready" in parsed || "target" in parsed) {
+    render(parsed);
+   }
+  }
+ } catch (e) { console.warn("Invalid status packet", e); }
+}
+
+async function disconnect() {
+ if (device?.gatt?.connected) device.gatt.disconnect();
+ characteristic = null;
+ device = null;
+ setConnected(false);
+ setLog("logDisconnected");
+}
+
+async function connect() {
+ if (!navigator.bluetooth) { setLog("logNoBle"); return; }
+ try {
+  $("connectBtn").disabled = true;
+  setLog("logPicker");
+  device = await navigator.bluetooth.requestDevice({
+   filters: [{ services: [SERVICE_UUID] }],
+   optionalServices: [SERVICE_UUID]
+  });
+  device.addEventListener("gattserverdisconnected", () => {
+   characteristic = null;
+   setConnected(false);
+   setLog("logLost");
+  });
+  const server = await device.gatt.connect();
+  const service = await server.getPrimaryService(SERVICE_UUID);
+  characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+  await characteristic.startNotifications();
+  characteristic.addEventListener("characteristicvaluechanged", e => parseStatus(e.target.value));
+  const initial = await characteristic.readValue();
+  parseStatus(initial);
+  setConnected(true);
+  setLog("logConnected", { name: device.name || DEV_NAME });
+  profileSyncState = "syncing";
+  syncProfileTexts();
+  await send("GET_CONFIG");
+ } catch (err) {
+  if (err.name === "NotFoundError") setLog("logNoSelect");
+  else setLog("logCmdFail", { err: err.message });
+  if (device?.gatt?.connected) device.gatt.disconnect();
+ } finally { $("connectBtn").disabled = false; }
+}
+
+async function send(command) {
+ if (!characteristic) { setLog("logConnectFirst"); return false; }
+ try {
+  const bytes = new TextEncoder().encode(command);
+  if (characteristic.writeValueWithResponse) await characteristic.writeValueWithResponse(bytes);
+  else await characteristic.writeValue(bytes);
+  setLog("logCmdSent", { cmd: command.replace("=", " · ") });
+  return true;
+ } catch (err) { setLog("logCmdFail", { err: err.message }); return false; }
+}
+
+$("connectBtn").addEventListener("click", () => device?.gatt?.connected ? disconnect() : connect());
+
+async function setting(key, value, command) {
+ lock(key, value);
+ refresh();
+ if (!(await send(command))) {
+  delete pending[key];
+ }
+}
+
+$("muteBtn").addEventListener("click", () => {
+ if (!state) return;
+ const muted = !state.muted;
+ setting("muted", muted, "MUTE=" + (muted ? "1" : "0"));
+});
+$("alwaysBtn").addEventListener("click", () => setting("alwaysOn", true, "MODE=1"));
+$("pressBtn").addEventListener("click", () => setting("alwaysOn", false, "MODE=0"));
+$("cBtn").addEventListener("click", () => setting("unit", "C", "UNIT=C"));
+$("fBtn").addEventListener("click", () => setting("unit", "F", "UNIT=F"));
+
+function applyTargetUI(c) {
+ const clamped = Math.max(0, Math.min(100, Math.round(c)));
+ previewTarget = clamped;
+ if (characteristic) lock("target", clamped);
+ movePin(clamped);
+ $("targetValue").textContent = fmtTarget(clamped);
+ return clamped;
+}
+
+function commitTarget(c) {
+ const clamped = applyTargetUI(c);
+ if (characteristic) setting("target", clamped, "TARGET=" + clamped);
+}
+
+// Smart drag directly on the live temperature bar
+let activeMeterPointer = null;
+function targetFromMeterClientX(clientX) {
+ const rect = $("meterTrack").getBoundingClientRect();
+ const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+ return Math.round(ratio * 100);
+}
+$("targetBox").addEventListener("click", () => $("meterTrack").focus());
+$("meterTrack").addEventListener("pointerdown", e => {
+ activeMeterPointer = e.pointerId;
+ $("meterTrack").setPointerCapture(e.pointerId);
+ $("targetPin").classList.add("dragging");
+ applyTargetUI(targetFromMeterClientX(e.clientX));
+ e.preventDefault();
+});
+$("meterTrack").addEventListener("pointermove", e => {
+ if (activeMeterPointer === e.pointerId) {
+  applyTargetUI(targetFromMeterClientX(e.clientX));
+ }
+});
+function finishMeterPointer(e) {
+ if (activeMeterPointer !== e.pointerId) return;
+ activeMeterPointer = null;
+ $("targetPin").classList.remove("dragging");
+ commitTarget(targetFromMeterClientX(e.clientX));
+}
+$("meterTrack").addEventListener("pointerup", finishMeterPointer);
+$("meterTrack").addEventListener("pointercancel", e => {
+ if (activeMeterPointer !== e.pointerId) return;
+ activeMeterPointer = null;
+ $("targetPin").classList.remove("dragging");
+});
+$("meterTrack").addEventListener("keydown", e => {
+ const base = state && Number.isFinite(state.target) ? state.target : previewTarget;
+ if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+  commitTarget(base - 1);
+  e.preventDefault();
+ } else if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+  commitTarget(base + 1);
+  e.preventDefault();
+ }
+});
+
+// ---------------- Collapsible Advanced Settings ----------------
+$("advancedToggle").addEventListener("click", () => {
+ const btn = $("advancedToggle");
+ const wrap = $("advancedSection");
+ const inner = $("advancedInner");
+ const open = btn.getAttribute("aria-expanded") !== "true";
+ btn.setAttribute("aria-expanded", open ? "true" : "false");
+ wrap.classList.toggle("open", open);
+ if (open) {
+  inner.removeAttribute("inert");
+  requestAnimationFrame(() => updateProfileDisplay());
+ } else {
+  inner.setAttribute("inert", "");
+ }
+});
+
+// ---------------- Temperature profile editor ----------------
+const DEFAULT_PROFILE = { b: [50, 60, 65], n: ["COMFORT", "WARM", "CAUTION", "HOT"] };
+function validBoundaries(b) {
+ return Array.isArray(b) && b.length === 3 && b.every(Number.isInteger) &&
+  b[0] >= 1 && b[0] <= 98 && b[1] >= 2 && b[1] <= 99 && b[2] >= 3 && b[2] <= 99 &&
+  b[0] < b[1] && b[1] < b[2];
+}
+function validLabel(v) {
+ return typeof v === "string" && v.trim().length >= 1 && v.trim().length <= 11 && /^[A-Za-z0-9 _-]+$/.test(v.trim());
+}
+function loadProfileInputs() {
+ profile.n.forEach((name, i) => $("levelName" + i).value = name);
+}
+function displayBoundary(c) { return Math.round(toUnit(c)); }
+
+function syncProfileTexts() {
+ const syncMap = {
+  waiting: "syncWaiting", syncing: "syncSyncing", savedDev: "syncSavedDev",
+  unsaved: "syncUnsaved", saved: "syncSaved", reset: "syncReset"
+ };
+ $("profileSync").textContent = t(syncMap[profileSyncState] || "syncWaiting");
+ $("profileStatus").textContent = t(profileStatusKey);
+}
+
+function updateProfileDisplay() {
+ const b = profile.b, n = profile.n;
+ const widths = [b[0], b[1] - b[0], b[2] - b[1], 100 - b[2]];
+ const barWidth = $("profileBar").clientWidth;
+ for (let i = 0; i < 4; i++) {
+  $("profileSeg" + i).style.width = widths[i] + "%";
+  const label = $("profileSegLabel" + i);
+  label.textContent = n[i];
+  if (barWidth > 0) {
+   const available = widths[i] / 100 * barWidth - 10;
+   const needed = n[i].length * 6.8 + 8;
+   label.style.display = available >= needed ? "inline" : "none";
+  } else {
+   label.style.display = "inline";
+  }
+ }
+ for (let i = 0; i < 3; i++) {
+  const value = b[i];
+  const leftName = (n[i] || "").trim() || ("Level " + (i + 1));
+  const rightName = (n[i + 1] || "").trim() || ("Level " + (i + 2));
+  $("boundaryLabel" + i).textContent = leftName + " → " + rightName;
+  $("profileHandle" + i).style.left = value + "%";
+  $("profileHandle" + i).setAttribute("aria-label", leftName + " → " + rightName);
+  $("profileHandle" + i).setAttribute("aria-valuenow", value);
+  $("profileHandle" + i).setAttribute("aria-valuemin", i === 0 ? 1 : b[i - 1] + 1);
+  $("profileHandle" + i).setAttribute("aria-valuemax", i === 2 ? 99 : b[i + 1] - 1);
+  $("boundarySlider" + i).min = i === 0 ? 1 : b[i - 1] + 1;
+  $("boundarySlider" + i).max = i === 2 ? 99 : b[i + 1] - 1;
+  $("boundarySlider" + i).value = value;
+  $("boundaryValue" + i).value = displayBoundary(value) + unitText();
+ }
+ $("advancedBadge").textContent = n.map(x => x.trim()).filter(Boolean).join(" · ");
+ $("profileMin").textContent = fmtTarget(0) + unitText();
+ $("profileMax").textContent = fmtTarget(100) + unitText();
+ [0, 25, 50, 75, 100].forEach((v, i) => $("tick" + i).textContent = fmtTarget(v) + unitText());
+ [0, b[0], b[1], b[2], 100].forEach((v, i) => $("metaTick" + i).textContent = fmtTarget(v) + unitText());
+}
+
+function markProfileDirty() {
+ profileSyncState = "unsaved";
+ profileStatusKey = "statusDirty";
+ syncProfileTexts();
+}
+
+function setBoundary(i, value) {
+ const min = i === 0 ? 1 : profile.b[i - 1] + 1;
+ const max = i === 2 ? 99 : profile.b[i + 1] - 1;
+ profile.b[i] = Math.max(min, Math.min(max, Math.round(value)));
+ updateProfileDisplay();
+ markProfileDirty();
+}
+
+let activeProfilePointer = null;
+function nearestBoundaryIndex(clientX) {
+ const rect = $("profileBar").getBoundingClientRect();
+ const value = Math.max(0, Math.min(100, (clientX - rect.left) / rect.width * 100));
+ let best = 0, distance = Infinity;
+ profile.b.forEach((v, i) => {
+  const d = Math.abs(v - value);
+  if (d < distance) { distance = d; best = i; }
+ });
+ return best;
+}
+function updateBoundaryFromTrack(clientX) {
+ const rect = $("profileBar").getBoundingClientRect();
+ const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+ setBoundary(profileDragIndex, Math.round(ratio * 100));
+}
+$("profileBar").addEventListener("pointerdown", e => {
+ if (e.target.closest(".profile-handle")) {
+  profileDragIndex = Number(e.target.closest(".profile-handle").id.slice(-1));
+ } else {
+  profileDragIndex = nearestBoundaryIndex(e.clientX);
+ }
+ activeProfilePointer = e.pointerId;
+ $("profileBar").setPointerCapture(e.pointerId);
+ document.querySelectorAll(".profile-handle").forEach((h, i) => h.classList.toggle("dragging", i === profileDragIndex));
+ updateBoundaryFromTrack(e.clientX);
+ e.preventDefault();
+});
+$("profileBar").addEventListener("pointermove", e => {
+ if (activeProfilePointer === e.pointerId && profileDragIndex >= 0) updateBoundaryFromTrack(e.clientX);
+});
+function finishProfilePointer(e) {
+ if (activeProfilePointer !== e.pointerId) return;
+ activeProfilePointer = null;
+ profileDragIndex = -1;
+ document.querySelectorAll(".profile-handle").forEach(h => h.classList.remove("dragging"));
+}
+$("profileBar").addEventListener("pointerup", finishProfilePointer);
+$("profileBar").addEventListener("pointercancel", finishProfilePointer);
+
+for (let i = 0; i < 3; i++) {
+ const handle = $("profileHandle" + i);
+ handle.addEventListener("keydown", e => {
+  if (e.key === "ArrowLeft" || e.key === "ArrowDown") { setBoundary(i, profile.b[i] - 1); e.preventDefault(); }
+  if (e.key === "ArrowRight" || e.key === "ArrowUp") { setBoundary(i, profile.b[i] + 1); e.preventDefault(); }
+ });
+ $("boundarySlider" + i).addEventListener("input", e => setBoundary(i, Number(e.target.value)));
+ $("boundarySlider" + i).addEventListener("change", () => markProfileDirty());
+ $("boundaryValue" + i).addEventListener("change", e => {
+  const raw = e.target.value.replace(/[°CFcf\s]/g, "");
+  const displayed = Number(raw);
+  if (!Number.isFinite(displayed)) { updateProfileDisplay(); return; }
+  const c = unitF ? (displayed - 32) * 5 / 9 : displayed;
+  setBoundary(i, c);
+ });
+}
+
+for (let i = 0; i < 4; i++) {
+ $("levelName" + i).addEventListener("input", e => {
+  const value = e.target.value;
+  if (value.length <= 11 && /^[A-Za-z0-9 _-]*$/.test(value)) {
+   profile.n[i] = value;
+   updateProfileDisplay();
+   markProfileDirty();
+  }
+ });
+ $("levelName" + i).addEventListener("change", e => {
+  const clean = e.target.value.trim();
+  if (!validLabel(clean)) {
+   e.target.value = profile.n[i];
+   profileStatusKey = "statusInvalidChars";
+   syncProfileTexts();
+   return;
+  }
+  profile.n[i] = clean;
+  e.target.value = clean;
+  updateProfileDisplay();
+ });
+}
+
+$("saveProfileBtn").addEventListener("click", async () => {
+ const names = profile.n.map(x => x.trim());
+ if (!validBoundaries(profile.b) || !names.every(validLabel)) {
+  profileStatusKey = "statusCheckBeforeSave";
+  syncProfileTexts();
+  return;
+ }
+ const ok = await send("THRESHOLDS=" + profile.b.join(","));
+ if (!ok) return;
+ for (let i = 0; i < 4; i++) {
+  if (!(await send("LABEL" + i + "=" + names[i]))) return;
+ }
+ profile.n = names;
+ loadProfileInputs();
+ updateProfileDisplay();
+ profileSyncState = "saved";
+ profileStatusKey = "statusSent";
+ syncProfileTexts();
+ await send("GET_CONFIG");
+});
+
+$("resetProfileBtn").addEventListener("click", async () => {
+ if (!characteristic) return;
+ if (!confirm(t("confirmReset"))) return;
+ profileStatusKey = "statusRestoring";
+ syncProfileTexts();
+ if (await send("RESET_CONFIG")) {
+  profile = { b: [...DEFAULT_PROFILE.b], n: [...DEFAULT_PROFILE.n] };
+  loadProfileInputs();
+  updateProfileDisplay();
+  profileSyncState = "reset";
+  syncProfileTexts();
+  await send("GET_CONFIG");
+ }
+});
+
+window.addEventListener("resize", updateProfileDisplay);
+
+// ---------------- Theme & Language ----------------
+function applyTheme(theme) {
+ const light = theme === "light";
+ document.documentElement.dataset.theme = light ? "light" : "dark";
+ document.documentElement.style.colorScheme = light ? "light" : "dark";
+ const btn = $("themeToggle");
+ btn.textContent = light ? t("dark") : t("light");
+ try { localStorage.setItem("tempclip-theme", light ? "light" : "dark"); } catch (e) {}
+}
+
+function applyLanguage() {
+ document.documentElement.lang = currentLang;
+ document.documentElement.dir = currentLang === "ar" ? "rtl" : "ltr";
+ $("langSelect").value = currentLang;
+
+ $("subTitle").textContent = t("sub");
+ const isLight = document.documentElement.dataset.theme === "light";
+ $("themeToggle").textContent = isLight ? t("dark") : t("light");
+ const isConnected = !!(device && device.gatt && device.gatt.connected);
+ $("connection").textContent = isConnected ? t("connected") : t("disconnected");
+ $("connectBtn").textContent = isConnected ? t("disconnectBtn") : t("connectBtn");
+
+ $("liveTitle").textContent = t("liveTitle");
+ $("targetTitle").textContent = t("targetTitle");
+ $("unitTitle").textContent = t("unitTitle");
+ $("unitHint").textContent = t("unitHint");
+ $("audioTitle").textContent = t("audioTitle");
+ $("alertSoundName").textContent = t("alertSound");
+ $("displayTitle").textContent = t("displayTitle");
+ $("alwaysBtn").textContent = t("alwaysOnBtn");
+ $("pressBtn").textContent = t("onPressBtn");
+ $("displayHint").textContent = t("displayHint");
+
+ $("advancedTitle").textContent = t("advancedTitle");
+ $("levelsTitle").textContent = t("levelsTitle");
+ $("levelNamesTitle").textContent = t("levelNamesTitle");
+ $("levelFieldLabel0").textContent = t("lvl0");
+ $("levelFieldLabel1").textContent = t("lvl1");
+ $("levelFieldLabel2").textContent = t("lvl2");
+ $("levelFieldLabel3").textContent = t("lvl3");
+ $("levelNamesHint").textContent = t("levelNamesHint");
+ $("resetProfileBtn").textContent = t("resetBtn");
+ $("saveProfileBtn").textContent = t("saveBtn");
+ $("footText").textContent = t("foot");
+ $("log").textContent = t(lastLogState.key, lastLogState.vars);
+
+ updateUnitTexts();
+ syncProfileTexts();
+ updateProfileDisplay();
+
+ if (state) {
+  render(state);
+ } else {
+  $("sensor").textContent = t("sensorWaiting");
+  $("level").textContent = t("awaitingData");
+  $("mutehint").textContent = t("muteConnect");
+ }
+}
+
+$("langSelect").addEventListener("change", e => {
+ currentLang = e.target.value;
+ try { localStorage.setItem("smarttempclip-lang", currentLang); } catch (err) {}
+ applyLanguage();
+});
+
+let savedTheme = "dark";
+try { savedTheme = localStorage.getItem("tempclip-theme") || "dark"; } catch (e) {}
+applyTheme(savedTheme);
+$("themeToggle").addEventListener("click", () => {
+ applyTheme(document.documentElement.dataset.theme === "light" ? "dark" : "light");
+});
+
+applyLanguage();
+</script>
+</body>
+</html>
